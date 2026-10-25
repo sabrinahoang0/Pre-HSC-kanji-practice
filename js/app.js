@@ -379,7 +379,7 @@ function renderRound(){
 /* ---------- print / about ---------- */
 function printPage(){
   return '<h1>Print</h1><p>Download the printable kanji booklet. It has one page for each of the 200 kanji, with stroke order, writing boxes, example sentences and activities.</p>'+
-  '<p><a class="btn btn-primary" href="downloads/Prescribed_Kanji_Booklet.docx" download>Download the booklet (Word file)</a></p>'+
+  '<p><a class="btn btn-primary" href="downloads/Prescribed_Kanji_Booklet.pdf" download>Download the booklet (PDF)</a></p>'+
   '<p class="hint">To print a single kanji from this website, open its page and choose “Print this page”.</p>';
 }
 function aboutPage(){
