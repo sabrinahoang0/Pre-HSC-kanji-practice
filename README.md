@@ -1,4 +1,4 @@
-# Kanji Practice (The Ponds High School, Japanese)
+# Kanji Practice
 
 An accessible study website for the 200 prescribed kanji: stroke order, readings, example words and sentences, quizzes, a look-alike game and a printable booklet.
 

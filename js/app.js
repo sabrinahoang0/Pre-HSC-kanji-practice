@@ -79,7 +79,7 @@ function route(){
   else if(page==='about'){html=aboutPage();title='About and accessibility';}
   else{html=homePage();page='home';}
   main.innerHTML=html;
-  document.title=(page==='home'?'Kanji Practice':title+' | Kanji Practice')+' | The Ponds High School';
+  document.title=(page==='home'?'Kanji Practice':title+' | Kanji Practice');
   $$('[data-nav]').forEach(function(a){if(a.getAttribute('data-nav')===(page==='kanji'?'learn':page))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   if(init)init();
   if(!first){var h1=$('h1',main);if(h1){h1.setAttribute('tabindex','-1');h1.focus({preventScroll:true});}window.scrollTo(0,0);}
@@ -372,7 +372,7 @@ function printPage(){
 }
 function aboutPage(){
   return '<h1>About and accessibility</h1>'+
-  '<p>This website was made for students learning Japanese at The Ponds High School. It is designed so every student can use it.</p>'+
+  '<p>This website is designed for students learning Japanese. It is designed so every student can use it.</p>'+
   '<h2>Accessibility features</h2><ul>'+
   '<li><strong>Keyboard:</strong> everything can be used with the Tab, Shift+Tab, Enter, Space and arrow keys. A “Skip to main content” link appears when you press Tab.</li>'+
   '<li><strong>Screen readers:</strong> the pages use headings and landmarks. Pictures have text descriptions. Quiz results and game results are announced.</li>'+
