@@ -389,12 +389,12 @@ function resourcesPage(){
   '<div class="slide-frame"><img id="slimg" alt="" width="1280" height="720"></div>'+
   '<div class="btn-row slide-ctrl"><button type="button" class="btn btn-secondary" id="sl-prev">← Previous</button>'+
   '<span id="sl-count" class="status" role="status" aria-live="polite"></span>'+
-  '<button type="button" class="btn btn-secondary" id="sl-next">Next →</button>'+
+  '<button type="button" class="btn btn-secondary" id="sl-next">Next →</button><a class="btn btn-primary" id="sl-learn" href="#/learn" hidden>Learn this kanji</a>'+
   '<button type="button" class="btn btn-secondary" id="sl-fs" aria-pressed="false">Full screen</button><label for="sl-go" class="slide-go">Go to slide <input id="sl-go" type="number" min="1" value="1"></label></div>'+
   '<p id="sl-alt" class="hint"></p></div>';
 }
 function resourcesInit(){
-  var N=227,i=1,img=$('#slimg'),go=$('#sl-go');
+  var N=227,i=parseInt((function(){try{return sessionStorage.getItem('kanji.slide');}catch(e){return null;}})(),10)||1,img=$('#slimg'),go=$('#sl-go');
   go.max=N;
   function pad(n){return ('00'+n).slice(-3);}
   function show(n,announce){
@@ -405,10 +405,13 @@ function resourcesInit(){
     $('#sl-alt').textContent=alt;
     $('#sl-count').textContent='Slide '+i+' of '+N;
     $('#sl-prev').disabled=i===1;$('#sl-next').disabled=i===N;go.value=i;
+    try{sessionStorage.setItem('kanji.slide',i);}catch(e){}
+    var kj=window.SLIDE_KANJI&&window.SLIDE_KANJI[i-1],lb=$('#sl-learn');
+    if(kj){lb.hidden=false;lb.href='#/kanji/'+encodeURIComponent(kj);lb.setAttribute('aria-label','Learn the kanji '+kj+' on its own page');lb.innerHTML='Learn <span lang="ja">'+kj+'</span>';}else lb.hidden=true;
     var nx=new Image();if(i<N)nx.src='slides/'+pad(i+1)+'.jpg';
   }
   var sc=document.createElement('script');sc.src='js/slides.js';sc.onload=function(){show(i);};document.head.appendChild(sc);
-  show(1);
+  show(i);
   $('#sl-prev').addEventListener('click',function(){show(i-1);});
   $('#sl-next').addEventListener('click',function(){show(i+1);});
   go.addEventListener('change',function(){show(parseInt(go.value,10)||1);});
