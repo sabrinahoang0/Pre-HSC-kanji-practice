@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kanji Practice | The Ponds High School</title>
+<meta name="description" content="Learn and practise the 200 prescribed kanji: readings, stroke order, example words and sentences, quizzes and games. Built to be accessible.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="css/style.css">
+<script>
+/* Apply saved settings before first paint so the page does not flash. */
+(function(){try{var s=JSON.parse(localStorage.getItem('kanji.settings')||'{}');var h=document.documentElement;
+['theme','font','spacing','furi','furisize','motion'].forEach(function(k){if(s[k])h.setAttribute('data-'+k,s[k]);});
+if(s.size)h.style.setProperty('--text-scale',s.size/100);}catch(e){}})();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header class="site-header">
+  <a class="brand" href="#/"><span class="brand-kanji" lang="ja" aria-hidden="true">漢字</span><span class="brand-text">Kanji Practice</span></a>
+  <nav aria-label="Main">
+    <ul class="nav-list">
+      <li><a href="#/learn" data-nav="learn">Learn</a></li>
+      <li><a href="#/practice" data-nav="practice">Practice</a></li>
+      <li><a href="#/spot" data-nav="spot">Spot it</a></li>
+      <li><a href="#/print" data-nav="print">Print</a></li>
+    </ul>
+  </nav>
+  <button type="button" id="open-settings" class="btn btn-secondary" aria-haspopup="dialog">Display and sound settings</button>
+</header>
+
+<main id="main" tabindex="-1"><p>Loading…</p></main>
+
+<footer class="site-footer">
+  <p>Made for Japanese students at The Ponds High School. This site does not collect any information. Your progress and settings are saved only on this device.</p>
+  <p>Stroke-order data from <a href="https://kanjivg.tagaini.net/">KanjiVG</a> (copyright Ulrich Apel, <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>). Fonts: Atkinson Hyperlegible and OpenDyslexic (SIL Open Font License).</p>
+  <p><a href="#/about">About and accessibility</a></p>
+</footer>
+
+<dialog id="settings" aria-labelledby="settings-title">
+  <form method="dialog" class="settings-form">
+    <h2 id="settings-title">Display and sound settings</h2>
+    <p class="hint">Changes happen straight away and are remembered on this device.</p>
+
+    <fieldset>
+      <legend>Colours</legend>
+      <label><input type="radio" name="theme" value="auto"> Match my device</label>
+      <label><input type="radio" name="theme" value="light"> Light</label>
+      <label><input type="radio" name="theme" value="dark"> Dark</label>
+      <label><input type="radio" name="theme" value="contrast"> High contrast (yellow on black)</label>
+    </fieldset>
+
+    <div class="field">
+      <label for="set-size">Text size: <output id="size-out">100%</output></label>
+      <input id="set-size" type="range" min="100" max="200" step="10" value="100">
+    </div>
+
+    <fieldset>
+      <legend>Reading font</legend>
+      <label><input type="radio" name="font" value="standard"> Standard</label>
+      <label><input type="radio" name="font" value="easy"> Easy-read (Atkinson Hyperlegible)</label>
+      <label><input type="radio" name="font" value="dyslexia"> Dyslexia-friendly (OpenDyslexic)</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Line and letter spacing</legend>
+      <label><input type="radio" name="spacing" value="normal"> Normal</label>
+      <label><input type="radio" name="spacing" value="wide"> Wide</label>
+      <label><input type="radio" name="spacing" value="extra"> Extra wide</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Furigana (small hiragana above kanji)</legend>
+      <label><input type="radio" name="furi" value="show"> Show</label>
+      <label><input type="radio" name="furi" value="hide"> Hide</label>
+      <label><input type="radio" name="furisize" value="normal"> Normal size</label>
+      <label><input type="radio" name="furisize" value="large"> Large size</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Movement</legend>
+      <label><input type="radio" name="motion" value="auto"> Match my device</label>
+      <label><input type="radio" name="motion" value="reduce"> Reduce movement (no animation)</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Japanese read-aloud speed</legend>
+      <label><input type="radio" name="speed" value="slow"> Slow</label>
+      <label><input type="radio" name="speed" value="normal"> Normal</label>
+    </fieldset>
+
+    <div class="dialog-actions">
+      <button type="button" id="reset-settings" class="btn btn-secondary">Reset to defaults</button>
+      <button type="submit" class="btn btn-primary" id="close-settings">Done</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<noscript><p class="noscript">This site needs JavaScript to show the kanji pages. You can still download the printable booklet from the <a href="downloads/Prescribed_Kanji_Booklet.docx">downloads folder</a>.</p></noscript>
+</body>
+</html>
