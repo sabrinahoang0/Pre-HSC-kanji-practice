@@ -6,7 +6,7 @@ No build step, no accounts, no tracking. Settings and progress are saved in the 
 
 ## Publish with GitHub Pages
 1. Create a new repository on GitHub (public).
-2. Upload everything in this folder (keep the `css`, `js`, `fonts`, `downloads` folders).
+2. Upload everything in this folder (keep the `css`, `js`, `fonts`, `downloads`, `slides` folders).
 3. Settings > Pages > Build and deployment > Deploy from a branch > `main` / `(root)` > Save.
 4. After a minute the site is live at `https://YOUR-USERNAME.github.io/REPO-NAME/`.
 

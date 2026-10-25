@@ -75,7 +75,7 @@ function route(){
   else if(page==='kanji'&&BY[parts[1]]){var d=BY[parts[1]];html=kanjiPage(d);title=d.k+' '+d.label;init=function(){kanjiInit(d);};}
   else if(page==='practice'){html=practiceSetup();title='Practice';init=practiceInit;}
   else if(page==='spot'){html=spotPage();title='Spot it';init=spotInit;}
-  else if(page==='print'){html=printPage();title='Print';}
+  else if(page==='resources'||page==='print'){html=resourcesPage();title='Resources';init=resourcesInit;page='resources';}
   else if(page==='about'){html=aboutPage();title='About and accessibility';}
   else{html=homePage();page='home';}
   main.innerHTML=html;
@@ -95,7 +95,7 @@ function homePage(){
   '<li class="tile"><a href="#/learn"><strong>Learn</strong>Open any kanji: readings, stroke order, example words and sentences.</a></li>'+
   '<li class="tile"><a href="#/practice"><strong>Practice</strong>Quizzes on readings, meanings and missing kanji. Marked for you.</a></li>'+
   '<li class="tile"><a href="#/spot"><strong>Spot it</strong>Find the real kanji hidden among look-alikes.</a></li>'+
-  '<li class="tile"><a href="#/print"><strong>Print</strong>Download the printable booklet.</a></li></ul>'+
+  '<li class="tile"><a href="#/resources"><strong>Resources</strong>Printable booklet and lesson slides.</a></li></ul>'+
   '<p>Use <strong>Display and sound settings</strong> at the top of every page to change colours, text size, font, spacing, furigana, movement and read-aloud speed.</p>';
 }
 
@@ -377,10 +377,46 @@ function renderRound(){
 }
 
 /* ---------- print / about ---------- */
-function printPage(){
-  return '<h1>Print</h1><p>Download the printable kanji booklet. It has one page for each of the 200 kanji, with stroke order, writing boxes, example sentences and activities.</p>'+
+function resourcesPage(){
+  return '<h1>Resources</h1>'+
+  '<h2>Printable booklet</h2><p>The kanji booklet has one page for each of the 200 kanji, with stroke order, writing boxes, example sentences and activities.</p>'+
   '<p><a class="btn btn-primary" href="downloads/Prescribed_Kanji_Booklet.pdf" download>Download the booklet (PDF)</a></p>'+
-  '<p class="hint">To print a single kanji from this website, open its page and choose “Print this page”.</p>';
+  '<p class="hint">To print one kanji from this website, open its page and choose “Print this page”.</p>'+
+  '<h2>Teacher answer key</h2><p>Answers to the booklet activities.</p>'+
+  '<p><a class="btn btn-secondary" href="downloads/Prescribed_Kanji_Booklet_Answer_Key.pdf" download>Download the answer key (PDF)</a></p>'+
+  '<h2 id="slides-h">Lesson slides</h2><p>View the slides here. Use the buttons, or the left and right arrow keys, to move between slides.</p>'+
+  '<div class="slideviewer" id="sv2" role="group" aria-labelledby="slides-h" tabindex="0">'+
+  '<div class="slide-frame"><img id="slimg" alt="" width="1280" height="720"></div>'+
+  '<div class="btn-row slide-ctrl"><button type="button" class="btn btn-secondary" id="sl-prev">← Previous</button>'+
+  '<span id="sl-count" class="status" role="status" aria-live="polite"></span>'+
+  '<button type="button" class="btn btn-secondary" id="sl-next">Next →</button>'+
+  '<label for="sl-go" class="slide-go">Go to slide <input id="sl-go" type="number" min="1" value="1"></label></div>'+
+  '<p id="sl-alt" class="hint"></p></div>';
+}
+function resourcesInit(){
+  var N=227,i=1,img=$('#slimg'),go=$('#sl-go');
+  go.max=N;
+  function pad(n){return ('00'+n).slice(-3);}
+  function show(n,announce){
+    i=Math.max(1,Math.min(N,n));
+    img.src='slides/'+pad(i)+'.jpg';
+    var alt=(window.SLIDE_ALTS&&window.SLIDE_ALTS[i-1])||'';
+    img.alt='Slide '+i+' of '+N+(alt?': '+alt:'');
+    $('#sl-alt').textContent=alt;
+    $('#sl-count').textContent='Slide '+i+' of '+N;
+    $('#sl-prev').disabled=i===1;$('#sl-next').disabled=i===N;go.value=i;
+    var nx=new Image();if(i<N)nx.src='slides/'+pad(i+1)+'.jpg';
+  }
+  var sc=document.createElement('script');sc.src='js/slides.js';sc.onload=function(){show(i);};document.head.appendChild(sc);
+  show(1);
+  $('#sl-prev').addEventListener('click',function(){show(i-1);});
+  $('#sl-next').addEventListener('click',function(){show(i+1);});
+  go.addEventListener('change',function(){show(parseInt(go.value,10)||1);});
+  $('#sv2').addEventListener('keydown',function(e){
+    if(e.target===go)return;
+    if(e.key==='ArrowRight'){e.preventDefault();show(i+1);}
+    else if(e.key==='ArrowLeft'){e.preventDefault();show(i-1);}
+  });
 }
 function aboutPage(){
   return '<h1>About and accessibility</h1>'+

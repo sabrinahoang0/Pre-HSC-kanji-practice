@@ -197,3 +197,8 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 }
 .hear{display:inline-flex;gap:.4rem;flex-wrap:wrap}
 .speedbar{border:0;padding:0;margin:1rem 0 0;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.speedbar legend{font-weight:700;float:left;margin-right:.75rem;padding:0}
+.slideviewer{margin:1rem 0;border:2px solid var(--border,#888);border-radius:.75rem;padding:.75rem;max-width:960px}
+.slideviewer:focus-visible{outline:3px solid var(--focus,#1a56db);outline-offset:2px}
+.slide-frame img{display:block;width:100%;height:auto;border-radius:.5rem;background:#eee;aspect-ratio:16/9}
+.slide-ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-top:.75rem}
+.slide-go input{width:5rem;min-height:44px;font:inherit;margin-left:.4rem}
