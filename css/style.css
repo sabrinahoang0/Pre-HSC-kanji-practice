@@ -195,3 +195,4 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   main{max-width:none;padding:0}
   .card-list li,.q-card{break-inside:avoid}
 }
+.hear{display:inline-flex;gap:.4rem;flex-wrap:wrap}

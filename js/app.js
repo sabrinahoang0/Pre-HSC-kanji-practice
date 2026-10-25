@@ -54,15 +54,15 @@ function kana(segs){return segs.map(function(s){return s[0]==='R'?s[2]:s[1];}).j
 var voices=[];
 function loadVoices(){if('speechSynthesis' in window)voices=speechSynthesis.getVoices().filter(function(v){return /^ja/i.test(v.lang);});}
 if('speechSynthesis' in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices;}
-function speak(text){
+function speak(text,slow){
   if(!('speechSynthesis' in window)){say('Read-aloud is not available in this browser.');return;}
   loadVoices();speechSynthesis.cancel();
   var u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';
   if(voices.length)u.voice=voices[0];else say('No Japanese voice was found on this device, so the sound may not be right. Ask your teacher for help adding one.');
-  u.rate=S.speed==='slow'?0.6:0.9;speechSynthesis.speak(u);
+  u.rate=(slow||S.speed==='slow')?0.5:0.9;speechSynthesis.speak(u);
 }
-document.addEventListener('click',function(e){var b=e.target.closest('[data-say]');if(b){speak(b.getAttribute('data-say'));}});
-function hearBtn(text,label){return '<button type="button" class="btn btn-secondary" data-say="'+esc(text)+'" aria-label="Hear '+esc(label)+' read aloud"><span aria-hidden="true">🔊</span> Hear</button>';}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-say]');if(b){speak(b.getAttribute('data-say'),b.hasAttribute('data-slow'));}});
+function hearBtn(text,label){return '<span class="hear"><button type="button" class="btn btn-secondary" data-say="'+esc(text)+'" aria-label="Hear '+esc(label)+' read aloud"><span aria-hidden="true">🔊</span> Hear</button> <button type="button" class="btn btn-secondary" data-say="'+esc(text)+'" data-slow="1" aria-label="Hear '+esc(label)+' read aloud slowly"><span aria-hidden="true">🐢</span> Slow</button></span>';}
 
 /* ---------- router ---------- */
 var first=true,strokeTimer=null;
