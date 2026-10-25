@@ -156,12 +156,14 @@ function kanjiPage(d){
   '<button type="button" class="btn btn-secondary" id="s-all">Show all strokes</button>'+
   '<button type="button" class="btn btn-secondary" id="s-reset">Start again</button></div><p id="s-note" class="hint"></p></div></div>'+
   '<details><summary>Every step as a picture ('+n+' steps)</summary><ol class="steps" aria-label="Stroke order steps">'+steps+'</ol></details>'+
+  '<fieldset class="speedbar"><legend>Read-aloud speed</legend><label class="chip"><input type="radio" name="spd" value="normal"'+(S.speed!=='slow'?' checked':'')+'><span>Normal</span></label><label class="chip"><input type="radio" name="spd" value="slow"'+(S.speed==='slow'?' checked':'')+'><span>🐢 Slow</span></label></fieldset>'+
   '<h2>Example words</h2><ul class="card-list">'+words+'</ul>'+
   '<h2>Example sentences</h2><ol class="card-list nums">'+sents+'</ol>'+
   '<div class="btn-row no-print"><button type="button" class="btn btn-secondary" onclick="window.print()">Print this page</button></div>'+
   '<nav class="pager" aria-label="Previous and next kanji">'+(prev?'<a class="btn btn-secondary" href="#/kanji/'+encodeURIComponent(prev.k)+'" rel="prev">← <span lang="ja">'+prev.k+'</span>&nbsp;'+esc(prev.label)+'</a>':'<span></span>')+(next?'<a class="btn btn-secondary" href="#/kanji/'+encodeURIComponent(next.k)+'" rel="next">'+esc(next.label)+'&nbsp;<span lang="ja">'+next.k+'</span> →</a>':'<span></span>')+'</nav>';
 }
 function kanjiInit(d){
+  $$('input[name="spd"]').forEach(function(r){r.addEventListener('change',function(){S.speed=r.value;applySettings();say('Read-aloud speed: '+r.value);});});
   var n=d.strokes.length,cur=0,playing=false;
   var st=$('#stroke-status'),play=$('#s-play'),note=$('#s-note');
   var rm=reduceMotion();
