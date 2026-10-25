@@ -142,6 +142,9 @@ function kanjiPage(d){
   var rd='<dl class="readings"><dt>On’yomi <span class="muted">(sound)</span></dt><dd lang="ja">'+esc(d.on||'–')+'</dd><dt>Kun’yomi <span class="muted">(meaning)</span></dt><dd lang="ja">'+esc(d.kun||'–')+'</dd></dl>';
   var words=d.words.map(function(w){return '<li><span class="jp" lang="ja">'+ruby(w.ruby)+'</span><span class="sr-only">, reading '+esc(w.r)+'</span><span class="en">'+esc(w.e)+'</span>'+hearBtn(w.r,w.w+', '+w.e)+'</li>';}).join('');
   var sents=d.sents.map(function(s){return '<li><span class="grow"><span class="sent" lang="ja">'+ruby(s.segs)+'</span><br><span class="en">'+esc(s.eng)+'</span></span>'+hearBtn(kana(s.segs),'sentence '+(d.sents.indexOf(s)+1))+'</li>';}).join('');
+  var ext='<h2>Extension words</h2>';
+  if(d.ext&&d.ext.length){ext+='<p class="hint">More words that use this kanji, from the Stage 6 vocabulary list. These go beyond the example words above.</p><ul class="card-list">'+d.ext.map(function(w){return '<li><span class="jp" lang="ja">'+ruby(w.ruby)+'</span><span class="sr-only">, reading '+esc(kana(w.ruby))+'</span><span class="en">'+esc(w.e)+'</span>'+hearBtn(kana(w.ruby),w.w+', '+w.e)+'</li>';}).join('')+'</ul>';}
+  else ext+='<p class="hint">There are no extra words for this kanji in the Stage 6 vocabulary list. The example words above are the ones to learn.</p>';
   return '<p><a href="#/learn">← All kanji</a></p>'+
   '<div class="kpage-top"><div class="kanji-display" lang="ja" role="img" aria-label="The kanji '+esc(d.k)+'">'+d.k+'</div><div>'+
   '<h1>'+esc(d.label)+'<span class="sr-only"> (the kanji '+esc(d.k)+')</span></h1>'+
@@ -159,7 +162,7 @@ function kanjiPage(d){
   '<fieldset class="speedbar"><legend>Read-aloud speed</legend><label class="chip"><input type="radio" name="spd" value="normal"'+(S.speed!=='slow'?' checked':'')+'><span>Normal</span></label><label class="chip"><input type="radio" name="spd" value="slow"'+(S.speed==='slow'?' checked':'')+'><span>🐢 Slow</span></label></fieldset>'+
   '<h2>Example words</h2><ul class="card-list">'+words+'</ul>'+
   '<h2>Example sentences</h2><ol class="card-list nums">'+sents+'</ol>'+
-  '<div class="btn-row no-print"><button type="button" class="btn btn-secondary" onclick="window.print()">Print this page</button></div>'+
+  ext+'<div class="btn-row no-print"><button type="button" class="btn btn-secondary" onclick="window.print()">Print this page</button></div>'+
   '<nav class="pager" aria-label="Previous and next kanji">'+(prev?'<a class="btn btn-secondary" href="#/kanji/'+encodeURIComponent(prev.k)+'" rel="prev">← <span lang="ja">'+prev.k+'</span>&nbsp;'+esc(prev.label)+'</a>':'<span></span>')+(next?'<a class="btn btn-secondary" href="#/kanji/'+encodeURIComponent(next.k)+'" rel="next">'+esc(next.label)+'&nbsp;<span lang="ja">'+next.k+'</span> →</a>':'<span></span>')+'</nav>';
 }
 function kanjiInit(d){
