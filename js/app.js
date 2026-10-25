@@ -206,8 +206,9 @@ function kanjiInit(d){
 }
 
 /* ---------- practice ---------- */
-var TYPES={read:'Read it: choose the reading of a word',meaning:'Match it: choose the English meaning of a word',gap:'Write it: choose the missing kanji in a sentence',kanji:'Kanji meaning: choose the meaning of a kanji'};
+var TYPES={read:'Read it: choose the reading of a word',meaning:'Match it: choose the English meaning of a word',gap:'Write it: choose the missing kanji in a sentence',kanji:'Kanji meaning: choose the meaning of a kanji',ext:'Extension words: read or match harder words from the Stage 6 list'};
 var lastSetup={type:'read',set:'active',n:10};
+var ALLX=[];K.forEach(function(d){(d.ext||[]).forEach(function(w){ALLX.push({w:w.w,r:kana(w.ruby),e:w.e,k:d.k});});});
 var ALLW=[];K.forEach(function(d){d.words.forEach(function(w){ALLW.push({w:w.w,r:w.r,e:w.e,k:d.k});});});
 function setOptions(sel){
   var o=[['all','All 200 kanji'],['active','Active Use (150)'],['recog','Recognition Only (50)'],['learned','Kanji I marked as learned']];
@@ -248,6 +249,11 @@ function distract(list,correct,count,keyFn,sim){
 }
 function buildQuestion(type,d){
   var q={type:type,d:d},opts,ans;
+  if(type==='ext'){var xw=pick(d.ext),xr=Math.random()<.5,w0={w:xw.w,r:kana(xw.ruby),e:xw.e};
+    if(xr){ans=w0.r;opts=[ans].concat(distract(ALLX,ans,3,function(x){return x.r;},true));q.prompt='How do you read this word?';q.optHtml=function(o){return '<span class="jp" lang="ja">'+esc(o)+'</span>';};}
+    else{ans=w0.e;opts=[ans].concat(distract(ALLX,ans,3,function(x){return x.e;},false));q.prompt='What does this word mean?';q.optHtml=function(o){return esc(o);};}
+    q.show='<span lang="ja">'+esc(w0.w)+'</span>';q.explain=w0.w+' is read '+w0.r+' and means “'+w0.e+'”.';
+    q.opts=shuffle(opts);q.ans=q.opts.indexOf(ans);q.ansText=ans;return q;}
   if(type==='read'||type==='meaning'){
     var w=pick(d.words);q.w=w;
     if(type==='read'){ans=w.r;opts=[ans].concat(distract(ALLW,ans,3,function(x){return x.r;},true));
@@ -277,7 +283,8 @@ function buildQuestion(type,d){
 var Q=null;
 function startQuiz(){
   var pool=poolFor(lastSetup.set);
-  if(!pool.length){main.innerHTML=practiceSetup('You have not marked any kanji as learned yet. Choose a different set, or mark some kanji on their pages.');practiceInit();return;}
+  if(lastSetup.type==='ext')pool=pool.filter(function(d){return d.ext&&d.ext.length;});
+  if(!pool.length){main.innerHTML=practiceSetup(lastSetup.type==='ext'?'No kanji in that set have extension words. Choose a different set.':'You have not marked any kanji as learned yet. Choose a different set, or mark some kanji on their pages.');practiceInit();return;}
   pool=shuffle(pool);var N=Math.min(lastSetup.n,Math.max(pool.length,lastSetup.n));
   var qs=[];for(var i=0;i<N;i++){qs.push(buildQuestion(lastSetup.type,pool[i%pool.length]));}
   Q={qs:qs,i:0,score:0,miss:[]};showQuestion();
