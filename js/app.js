@@ -390,7 +390,7 @@ function resourcesPage(){
   '<div class="btn-row slide-ctrl"><button type="button" class="btn btn-secondary" id="sl-prev">← Previous</button>'+
   '<span id="sl-count" class="status" role="status" aria-live="polite"></span>'+
   '<button type="button" class="btn btn-secondary" id="sl-next">Next →</button>'+
-  '<label for="sl-go" class="slide-go">Go to slide <input id="sl-go" type="number" min="1" value="1"></label></div>'+
+  '<button type="button" class="btn btn-secondary" id="sl-fs" aria-pressed="false">Full screen</button><label for="sl-go" class="slide-go">Go to slide <input id="sl-go" type="number" min="1" value="1"></label></div>'+
   '<p id="sl-alt" class="hint"></p></div>';
 }
 function resourcesInit(){
@@ -412,6 +412,18 @@ function resourcesInit(){
   $('#sl-prev').addEventListener('click',function(){show(i-1);});
   $('#sl-next').addEventListener('click',function(){show(i+1);});
   go.addEventListener('change',function(){show(parseInt(go.value,10)||1);});
+  var box=$('#sv2'),fsb=$('#sl-fs'),fake=false;
+  function isFs(){return !!(document.fullscreenElement===box||fake);}
+  function sync(){var on=isFs();fsb.textContent=on?'Exit full screen':'Full screen';fsb.setAttribute('aria-pressed',on?'true':'false');box.classList.toggle('is-fs',on);}
+  function exitFs(){if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen();fake=false;sync();}
+  fsb.addEventListener('click',function(){
+    if(isFs()){exitFs();say('Exited full screen');return;}
+    if(box.requestFullscreen){box.requestFullscreen().then(function(){sync();}).catch(function(){fake=true;sync();});}
+    else{fake=true;sync();}
+    box.focus();say('Full screen. Use the arrow keys to change slides. Press Escape to exit.');
+  });
+  document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement)fake=false;sync();});
+  box.addEventListener('keydown',function(e){if(e.key==='Escape'&&fake){exitFs();}});
   $('#sv2').addEventListener('keydown',function(e){
     if(e.target===go)return;
     if(e.key==='ArrowRight'){e.preventDefault();show(i+1);}
