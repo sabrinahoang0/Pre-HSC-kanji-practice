@@ -86,7 +86,7 @@ function route(){
   else if(page==='practice'){html=practiceSetup();title='Practice';init=practiceInit;}
   else if(page==='spot'){html=spotPage();title='Spot it';init=spotInit;}
   else if(page==='resources'||page==='print'){html=resourcesPage();title='Resources';init=resourcesInit;page='resources';}
-  else if(page==='about'){html=aboutPage();title='About and accessibility';}
+  else if(page==='about'){html=aboutPage();title='About and accessibility';init=function(){var w=$('#install-wrap');if(w&&deferredInstall){w.hidden=false;$('#install-btn').addEventListener('click',function(){deferredInstall.prompt();deferredInstall=null;w.hidden=true;});}};}
   else{html=homePage();page='home';}
   main.innerHTML=html;
   document.title=(page==='home'?'Kanji Practice':title+' | Kanji Practice');
@@ -569,6 +569,8 @@ function resourcesInit(){
     else if(e.key==='ArrowLeft'){e.preventDefault();show(i-1);}
   });
 }
+var deferredInstall=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredInstall=e;var w=document.getElementById('install-wrap');if(w)w.hidden=false;});
 function aboutPage(){
   return '<h1>About and accessibility</h1>'+
   '<p>This website is designed for students learning Japanese. It is designed so every student can use it.</p>'+
@@ -580,6 +582,9 @@ function aboutPage(){
   '<li><strong>Sound:</strong> every example word and sentence can be read aloud in Japanese, slowly or at normal speed. This uses a voice on your own device.</li>'+
   '<li><strong>Movement:</strong> the stroke-order animation can be turned off. Every step is also shown as still pictures.</li>'+
   '<li><strong>No pressure:</strong> there are no timers and no accounts.</li></ul>'+
+  '<h2>Use it like an app</h2><p>You can add this website to your phone or tablet so it opens like an app. After you have opened it once with internet, the kanji pages, quizzes and flashcards also work with no signal. Slides and PDFs work offline only after you have opened them once.</p>'+
+  '<ul><li><strong>iPhone or iPad (Safari):</strong> tap the Share button, then <strong>Add to Home Screen</strong>.</li><li><strong>Android (Chrome):</strong> tap the menu (three dots), then <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li><li><strong>Computer (Chrome or Edge):</strong> choose the install icon at the right of the address bar.</li></ul>'+
+  '<p id="install-wrap" hidden><button type="button" class="btn btn-primary" id="install-btn">Install this app</button></p>'+
   '<h2>Privacy</h2><p>This site does not collect or send any information. Your settings, the kanji you mark as learned and your best quiz scores are saved only in your own browser on this device.</p>'+
   '<h2>Something not working for you?</h2><p>Tell your Japanese teacher what is hard to use and what would help, and the site can be improved.</p>';
 }
