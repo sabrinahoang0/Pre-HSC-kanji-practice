@@ -40,6 +40,14 @@ dlg.addEventListener('click',function(e){if(e.target===dlg&&dlg.close)dlg.close(
 applySettings();
 
 /* ---------- progress ---------- */
+var weak=store.get('kanji.weak',{});
+function weakList(){return Object.keys(weak).filter(function(k){return BY[k];});}
+function recordAnswer(k,ok){
+  if(!BY[k])return;
+  if(!ok){weak[k]=2;}
+  else if(weak[k]){weak[k]--;if(weak[k]<=0)delete weak[k];}
+  store.set('kanji.weak',weak);
+}
 var learned=store.get('kanji.learned',{});
 function isLearned(k){return !!learned[k];}
 function setLearned(k,v){if(v)learned[k]=1;else delete learned[k];store.set('kanji.learned',learned);}
@@ -73,6 +81,7 @@ function route(){
   var html='',title='Kanji Practice',init=null;
   if(page==='learn'){html=learnPage();title='Learn';init=learnInit;}
   else if(page==='kanji'&&BY[parts[1]]){var d=BY[parts[1]];html=kanjiPage(d);title=d.k+' '+d.label;init=function(){kanjiInit(d);};}
+  else if(page==='cards'){html=cardsPage();title='Flashcards';init=cardsInit;}
   else if(page==='practice'){html=practiceSetup();title='Practice';init=practiceInit;}
   else if(page==='spot'){html=spotPage();title='Spot it';init=spotInit;}
   else if(page==='resources'||page==='print'){html=resourcesPage();title='Resources';init=resourcesInit;page='resources';}
@@ -160,12 +169,13 @@ function kanjiPage(d){
   '<button type="button" class="btn btn-secondary" id="s-reset">Start again</button></div><p id="s-note" class="hint"></p></div></div>'+
   '<details><summary>Every step as a picture ('+n+' steps)</summary><ol class="steps" aria-label="Stroke order steps">'+steps+'</ol></details>'+
   '<fieldset class="speedbar"><legend>Read-aloud speed</legend><label class="chip"><input type="radio" name="spd" value="normal"'+(S.speed!=='slow'?' checked':'')+'><span>Normal</span></label><label class="chip"><input type="radio" name="spd" value="slow"'+(S.speed==='slow'?' checked':'')+'><span>🐢 Slow</span></label></fieldset>'+
-  '<h2>Example words</h2><ul class="card-list">'+words+'</ul>'+
+  writeSection(d)+'<h2>Example words</h2><ul class="card-list">'+words+'</ul>'+
   '<h2>Example sentences</h2><ol class="card-list nums">'+sents+'</ol>'+
   ext+'<div class="btn-row no-print"><button type="button" class="btn btn-secondary" onclick="window.print()">Print this page</button></div>'+
   '<nav class="pager" aria-label="Previous and next kanji">'+(prev?'<a class="btn btn-secondary" href="#/kanji/'+encodeURIComponent(prev.k)+'" rel="prev">← <span lang="ja">'+prev.k+'</span>&nbsp;'+esc(prev.label)+'</a>':'<span></span>')+(next?'<a class="btn btn-secondary" href="#/kanji/'+encodeURIComponent(next.k)+'" rel="next">'+esc(next.label)+'&nbsp;<span lang="ja">'+next.k+'</span> →</a>':'<span></span>')+'</nav>';
 }
 function kanjiInit(d){
+  writeInit(d);
   $$('input[name="spd"]').forEach(function(r){r.addEventListener('change',function(){S.speed=r.value;applySettings();say('Read-aloud speed: '+r.value);});});
   var n=d.strokes.length,cur=0,playing=false;
   var st=$('#stroke-status'),play=$('#s-play'),note=$('#s-note');
@@ -205,17 +215,54 @@ function kanjiInit(d){
   if(rm){cur=n;draw(false);}
 }
 
+function writeSection(d){
+  return '<h2>Practise writing</h2><p>Draw the kanji in the box with your finger, a stylus or a mouse. Then compare it with the correct kanji.</p>'+
+  '<div class="write-wrap"><div class="write-col"><div class="write-box" id="wbox"><svg class="write-guide" id="wguide" viewBox="0 0 109 109" aria-hidden="true" hidden>'+d.strokes.map(function(p){return '<path d="'+p+'"></path>';}).join('')+'</svg><canvas id="wcv" role="img" aria-label="Drawing area for writing the kanji '+esc(d.k)+'"></canvas></div>'+
+  '<p id="wstat" class="status" role="status">Strokes drawn: 0</p>'+
+  '<div class="btn-row"><button type="button" class="btn btn-secondary" id="wundo">Undo last stroke</button><button type="button" class="btn btn-secondary" id="wclear">Clear</button></div>'+
+  '<label class="wtrace"><input type="checkbox" id="wtrace"> Show a faint guide to trace</label></div>'+
+  '<div class="write-col"><div class="btn-row"><button type="button" class="btn btn-primary" id="wcompare">Compare with the correct kanji</button></div><div id="wresult" aria-live="polite"></div></div></div>'+
+  '<p class="hint">Drawing needs a mouse, finger or stylus. If you cannot draw on this device, watch the stroke animation above and write on paper instead.</p>';
+}
+function writeInit(d){
+  var cv=$('#wcv'),ctx=cv.getContext('2d'),strokes=[],cur=null,drawing=false;
+  function size(){var r=$('#wbox').getBoundingClientRect(),dpr=window.devicePixelRatio||1;cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);redraw();}
+  function inkColor(){return getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()||'#000';}
+  function redraw(){
+    ctx.clearRect(0,0,cv.width,cv.height);ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.lineWidth=Math.max(4,cv.width/28);ctx.strokeStyle=inkColor();
+    strokes.forEach(function(st){ctx.beginPath();st.forEach(function(p,i){var x=p[0]*cv.width,y=p[1]*cv.height;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});if(st.length===1){ctx.lineTo(st[0][0]*cv.width+.1,st[0][1]*cv.height);}ctx.stroke();});
+    $('#wstat').textContent='Strokes drawn: '+strokes.length;
+  }
+  function pt(e){var r=cv.getBoundingClientRect();return [Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))];}
+  cv.addEventListener('pointerdown',function(e){e.preventDefault();cv.setPointerCapture(e.pointerId);drawing=true;cur=[pt(e)];strokes.push(cur);redraw();});
+  cv.addEventListener('pointermove',function(e){if(!drawing)return;e.preventDefault();cur.push(pt(e));redraw();});
+  function end(){drawing=false;cur=null;}
+  cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+  $('#wundo').addEventListener('click',function(){strokes.pop();redraw();$('#wresult').innerHTML='';});
+  $('#wclear').addEventListener('click',function(){strokes=[];redraw();$('#wresult').innerHTML='';say('Drawing cleared');});
+  $('#wtrace').addEventListener('change',function(e){$('#wguide').hidden=!e.target.checked;});
+  $('#wcompare').addEventListener('click',function(){
+    var n=d.strokes.length,m=strokes.length;
+    var msg=m===0?'Draw the kanji first, then compare.':m===n?'You drew '+m+' strokes, which is the right number.':'You drew '+m+' stroke'+(m===1?'':'s')+'. '+d.k+' has '+n+'. Check which stroke is missing or extra.';
+    var svg='<svg class="write-model" viewBox="0 0 109 109" role="img" aria-label="Correct kanji '+esc(d.k)+' with numbered strokes"><path class="cross" d="M54.5 0V109M0 54.5H109" style="stroke-width:.6;stroke-dasharray:3 3"></path>'+d.strokes.map(function(p){return '<path d="'+p+'"></path>';}).join('')+d.strokes.map(function(p,i){var a=startOf(p);return '<text x="'+(a[0]-4)+'" y="'+(a[1]-1)+'">'+(i+1)+'</text>';}).join('')+'</svg>';
+    $('#wresult').innerHTML='<p class="feedback '+(m===n?'good':'bad')+'">'+esc(msg)+'</p><p>Correct kanji, with stroke order:</p>'+svg+'<p class="hint">Check the shape, the order of the strokes and the direction each stroke goes. Choose <strong>Clear</strong> to try again.</p>';
+  });
+  window.addEventListener('resize',size);size();
+}
+
 /* ---------- practice ---------- */
-var TYPES={read:'Read it: choose the reading of a word',meaning:'Match it: choose the English meaning of a word',gap:'Write it: choose the missing kanji in a sentence',kanji:'Kanji meaning: choose the meaning of a kanji',ext:'Extension words: read or match harder words from the Stage 6 list'};
+var TYPES={read:'Read it: choose the reading of a word',meaning:'Match it: choose the English meaning of a word',gap:'Write it: choose the missing kanji in a sentence',kanji:'Kanji meaning: choose the meaning of a kanji',ext:'Extension words: read or match harder words from the Stage 6 list',mix:'Mixed: a bit of everything',test:'Test prep: 20 mixed questions, answers shown at the end'};
 var lastSetup={type:'read',set:'active',n:10};
 var ALLX=[];K.forEach(function(d){(d.ext||[]).forEach(function(w){ALLX.push({w:w.w,r:kana(w.ruby),e:w.e,k:d.k});});});
 var ALLW=[];K.forEach(function(d){d.words.forEach(function(w){ALLW.push({w:w.w,r:w.r,e:w.e,k:d.k});});});
 function setOptions(sel){
-  var o=[['all','All 200 kanji'],['active','Active Use (150)'],['recog','Recognition Only (50)'],['learned','Kanji I marked as learned']];
+  var o=[['weak','My weak kanji ('+weakList().length+')'],['all','All 200 kanji'],['active','Active Use (150)'],['recog','Recognition Only (50)'],['learned','Kanji I marked as learned']];
   CATS.forEach(function(c){o.push(['cat:'+c.name,c.name+' ('+c.part+')']);});
   return o.map(function(x){return '<option value="'+esc(x[0])+'"'+(sel===x[0]?' selected':'')+'>'+esc(x[1])+'</option>';}).join('');
 }
 function poolFor(set){
+  if(set==='weak')return K.filter(function(d){return weak[d.k];});
   if(set==='all')return K.slice();
   if(set==='active')return K.filter(function(d){return d.active;});
   if(set==='recog')return K.filter(function(d){return !d.active;});
@@ -231,9 +278,12 @@ function practiceSetup(msg){
   Object.keys(TYPES).map(function(t){return '<label><input type="radio" name="qt" value="'+t+'"'+(lastSetup.type===t?' checked':'')+'> '+esc(TYPES[t])+(best[t]!=null?' <span class="muted">(best: '+best[t]+'%)</span>':'')+'</label>';}).join('')+'</fieldset>'+
   '<div><label for="qs"><strong>Which kanji?</strong></label><br><select id="qs">'+setOptions(lastSetup.set)+'</select></div>'+
   '<div><label for="qn"><strong>Number of questions</strong></label><br><select id="qn">'+[5,10,20].map(function(n){return '<option'+(lastSetup.n===n?' selected':'')+'>'+n+'</option>';}).join('')+'</select></div>'+
-  '<div><button class="btn btn-primary" type="submit">Start quiz</button></div></form><div id="quiz" aria-live="off"></div>';
+  '<div><button class="btn btn-primary" type="submit">Start quiz</button></div></form>'+
+  '<h2>Review my weak kanji</h2>'+(weakList().length?'<p>You have <strong>'+weakList().length+'</strong> kanji to review. Each one stays on this list until you answer it correctly twice.</p><p><button class="btn btn-secondary" id="weakgo" type="button">Practice my weak kanji</button></p>':'<p class="hint">Kanji you get wrong in a quiz are added here, so you can practise them again until they stick.</p>')+
+  '<h2>Flashcards</h2><p><a class="btn btn-secondary" href="#/cards">Open flashcards</a></p><div id="quiz" aria-live="off"></div>';
 }
 function practiceInit(){
+  var wg=$('#weakgo');if(wg)wg.addEventListener('click',function(){lastSetup={type:'mix',set:'weak',n:10};startQuiz();});
   $('#setup').addEventListener('submit',function(e){
     e.preventDefault();
     lastSetup={type:$('input[name="qt"]:checked').value,set:$('#qs').value,n:+$('#qn').value};
@@ -248,6 +298,7 @@ function distract(list,correct,count,keyFn,sim){
   return out;
 }
 function buildQuestion(type,d){
+  if(type==='mix'||type==='test'){var ts=['read','meaning','gap','kanji'];if(d.ext&&d.ext.length)ts.push('ext');type=pick(ts);}
   var q={type:type,d:d},opts,ans;
   if(type==='ext'){var xw=pick(d.ext),xr=Math.random()<.5,w0={w:xw.w,r:kana(xw.ruby),e:xw.e};
     if(xr){ans=w0.r;opts=[ans].concat(distract(ALLX,ans,3,function(x){return x.r;},true));q.prompt='How do you read this word?';q.optHtml=function(o){return '<span class="jp" lang="ja">'+esc(o)+'</span>';};}
@@ -284,10 +335,11 @@ var Q=null;
 function startQuiz(){
   var pool=poolFor(lastSetup.set);
   if(lastSetup.type==='ext')pool=pool.filter(function(d){return d.ext&&d.ext.length;});
-  if(!pool.length){main.innerHTML=practiceSetup(lastSetup.type==='ext'?'No kanji in that set have extension words. Choose a different set.':'You have not marked any kanji as learned yet. Choose a different set, or mark some kanji on their pages.');practiceInit();return;}
-  pool=shuffle(pool);var N=Math.min(lastSetup.n,Math.max(pool.length,lastSetup.n));
+  if(!pool.length){main.innerHTML=practiceSetup(lastSetup.type==='ext'?'No kanji in that set have extension words. Choose a different set.':(lastSetup.set==='weak'?'You have no weak kanji right now. Do a quiz first, and any kanji you miss will be added here.':'You have not marked any kanji as learned yet. Choose a different set, or mark some kanji on their pages.'));practiceInit();return;}
+  var isTest=lastSetup.type==='test';var want=isTest?20:lastSetup.n;
+  pool=shuffle(pool);var N=want;
   var qs=[];for(var i=0;i<N;i++){qs.push(buildQuestion(lastSetup.type,pool[i%pool.length]));}
-  Q={qs:qs,i:0,score:0,miss:[]};showQuestion();
+  Q={qs:qs,i:0,score:0,miss:[],test:isTest};showQuestion();
 }
 function showQuestion(){
   var q=Q.qs[Q.i],N=Q.qs.length,pct=Math.round(Q.i/N*100);
@@ -295,7 +347,7 @@ function showQuestion(){
   '<div class="meter" role="progressbar" aria-label="Quiz progress" aria-valuemin="0" aria-valuemax="'+N+'" aria-valuenow="'+Q.i+'"><span style="width:'+pct+'%"></span></div>'+
   '<form id="qf" class="q-card" novalidate><fieldset class="opts"><legend><span class="q-prompt">'+esc(q.prompt)+'</span><span class="q-show'+(q.small?' small':'')+'">'+q.show+'</span></legend>'+
   q.opts.map(function(o,j){return '<label><input type="radio" name="a" value="'+j+'"> <span>'+q.optHtml(o)+'</span></label>';}).join('')+
-  '</fieldset><div class="btn-row"><button class="btn btn-primary" type="submit" id="qb">Check answer</button><a class="btn btn-secondary" href="#/practice" id="qquit">Stop quiz</a></div><div id="fb" role="status" aria-live="polite"></div></form>';
+  '</fieldset>'+(Q.test?'<p class="hint">Test prep: your answers are shown at the end.</p>':'')+'<div class="btn-row"><button class="btn btn-primary" type="submit" id="qb">'+(Q.test?(Q.i+1>=N?'Finish test':'Next question'):'Check answer')+'</button><a class="btn btn-secondary" href="#/practice" id="qquit">Stop quiz</a></div><div id="fb" role="status" aria-live="polite"></div></form>';
   $('#qh').focus();
   var done=false;
   $('#qquit').addEventListener('click',function(){Q=null;});
@@ -306,6 +358,8 @@ function showQuestion(){
     if(!c){$('#fb').className='feedback bad';$('#fb').textContent='Please choose an answer first.';return;}
     var j=+c.value,ok=j===q.ans;done=true;
     if(ok)Q.score++;else Q.miss.push({q:q,chosen:q.opts[j]});
+    recordAnswer(q.d.k,ok);
+    if(Q.test){Q.i++;if(Q.i>=N)showResults();else showQuestion();return;}
     $$('.opts label').forEach(function(l,k){var inp=$('input',l);inp.disabled=true;
       if(k===q.ans){l.classList.add('right');l.insertAdjacentHTML('beforeend',' <strong>✓ correct answer</strong>');}
       else if(k===j){l.classList.add('wrong');l.insertAdjacentHTML('beforeend',' <strong>✗ your answer</strong>');}});
@@ -319,15 +373,61 @@ function showResults(){
   var N=Q.qs.length,pct=Math.round(Q.score/N*100);
   var best=store.get('kanji.best',{});var prev=best[lastSetup.type];
   if(prev==null||pct>prev){best[lastSetup.type]=pct;store.set('kanji.best',best);}
-  var msg=pct>=85?'Excellent work!':pct>=60?'Good effort. A little more practice and you will have it.':'Keep going. Review the kanji below and try again.';
+  var msg=Q.test&&pct<60?'Keep going. Go back to the kanji below, then try another test.':pct>=85?'Excellent work!':pct>=60?'Good effort. A little more practice and you will have it.':'Keep going. Review the kanji below and try again.';
   var missed={};Q.miss.forEach(function(m){missed[m.q.d.k]=1;});
   var rows=Q.miss.map(function(m){var q=m.q;return '<tr><td>'+q.show+'</td><td lang="ja">'+esc(m.chosen)+'</td><td lang="ja">'+esc(q.ansText)+'</td></tr>';}).join('');
-  main.innerHTML='<h1 id="qh" tabindex="-1">Your results</h1><p class="result-big">'+Q.score+' out of '+N+' ('+pct+'%)</p>'+
+  main.innerHTML='<h1 id="qh" tabindex="-1">'+(Q.test?'Your test results':'Your results')+'</h1><p class="result-big">'+Q.score+' out of '+N+' ('+pct+'%)</p>'+
   '<div class="meter" role="img" aria-label="'+pct+' percent correct"><span style="width:'+pct+'%"></span></div><p>'+msg+'</p>'+
   (Q.miss.length?'<h2>Questions to review</h2><table><thead><tr><th scope="col">Question</th><th scope="col">Your answer</th><th scope="col">Correct answer</th></tr></thead><tbody>'+rows+'</tbody></table><h2>Go back to these kanji</h2><ul class="tiles" style="grid-template-columns:repeat(auto-fill,minmax(8rem,1fr))">'+Object.keys(missed).map(function(k){return '<li class="tile"><a href="#/kanji/'+encodeURIComponent(k)+'"><strong lang="ja">'+k+'</strong>'+esc(BY[k].label)+'</a></li>';}).join('')+'</ul>':'<p>You got every question right!</p>')+
   '<div class="btn-row"><button class="btn btn-primary" id="again" type="button">Try again</button><a class="btn btn-secondary" href="#/practice">Change quiz</a></div>';
   $('#qh').focus();say('Quiz finished. You scored '+Q.score+' out of '+N+'.');
   $('#again').addEventListener('click',startQuiz);
+}
+
+/* ---------- flashcards ---------- */
+var cardSetup={deck:'kanji',set:'active'},C=null;
+function cardsPage(msg){
+  var decks=[['kanji','Kanji: see the kanji, recall the meaning'],['words','Example words: see the word, recall the reading and meaning'],['ext','Extension words: harder words from the Stage 6 list']];
+  return '<h1>Flashcards</h1><p>See the front, say the answer to yourself, then flip the card. Choose <strong>Got it</strong> or <strong>Again</strong>. Cards marked Again come back until you get them.</p>'+
+  (msg?'<p class="feedback bad" role="alert">'+esc(msg)+'</p>':'')+
+  '<form id="csetup" class="form-grid"><fieldset><legend>Deck</legend>'+decks.map(function(d){return '<label><input type="radio" name="deck" value="'+d[0]+'"'+(cardSetup.deck===d[0]?' checked':'')+'> '+esc(d[1])+'</label>';}).join('')+'</fieldset>'+
+  '<div><label for="cs"><strong>Which kanji?</strong></label><br><select id="cs">'+setOptions(cardSetup.set)+'</select></div>'+
+  '<div><button class="btn btn-primary" type="submit">Start flashcards</button></div></form><div id="cwrap"></div>';
+}
+function cardsInit(){
+  $('#csetup').addEventListener('submit',function(e){e.preventDefault();cardSetup={deck:$('input[name="deck"]:checked').value,set:$('#cs').value};startCards();});
+}
+function startCards(){
+  var pool=poolFor(cardSetup.set),items=[];
+  pool.forEach(function(d){
+    if(cardSetup.deck==='kanji')items.push({k:d.k,f:'<span lang="ja">'+esc(d.k)+'</span>',fl:'The kanji '+d.k,b:esc(d.label),sub:'On’yomi: '+esc(d.on||'–')+' · Kun’yomi: '+esc(d.kun||'–'),say:null,big:true});
+    else if(cardSetup.deck==='words')d.words.forEach(function(w){items.push({k:d.k,f:'<span lang="ja">'+esc(w.w)+'</span>',fl:w.w,b:esc(w.e),sub:'Reading: '+esc(w.r),say:w.r});});
+    else (d.ext||[]).forEach(function(w){items.push({k:d.k,f:'<span lang="ja">'+esc(w.w)+'</span>',fl:w.w,b:esc(w.e),sub:'Reading: '+esc(kana(w.ruby)),say:kana(w.ruby)});});
+  });
+  if(!items.length){main.innerHTML=cardsPage(cardSetup.set==='weak'?'You have no weak kanji right now.':'No cards in that set. Choose a different one.');cardsInit();return;}
+  C={q:shuffle(items),total:items.length,done:0,again:0,flipped:false};showCard();
+}
+function showCard(){
+  var c=C.q[0];
+  if(!c){
+    main.innerHTML='<h1 id="ch" tabindex="-1">Flashcards finished</h1><p class="result-big">'+C.total+' cards done</p><p>You needed to see '+C.again+' card'+(C.again===1?'':'s')+' again.</p><div class="btn-row"><button class="btn btn-primary" id="cagain" type="button">Go again</button><a class="btn btn-secondary" href="#/cards">Change deck</a></div>';
+    $('#ch').focus();say('Flashcards finished.');$('#cagain').addEventListener('click',startCards);return;
+  }
+  C.flipped=false;
+  main.innerHTML='<h1 id="ch" tabindex="-1">Flashcards</h1><p class="status" role="status">Cards left: '+C.q.length+' of '+C.total+'</p>'+
+  '<div class="fcard"><div class="fcard-front'+(c.big?' big':'')+'" aria-label="Front of card: '+esc(c.fl)+'">'+c.f+'</div>'+
+  '<div class="fcard-back" id="cback" role="status" aria-live="polite" hidden></div></div>'+
+  '<div class="btn-row"><button class="btn btn-primary" id="cflip" type="button">Show answer</button>'+
+  '<button class="btn btn-secondary" id="cgot" type="button" hidden>✓ Got it</button><button class="btn btn-secondary" id="cagn" type="button" hidden>↺ Again</button>'+
+  '<a class="btn btn-secondary" href="#/cards">Stop</a></div>';
+  $('#ch').focus();
+  $('#cflip').addEventListener('click',function(){
+    var b=$('#cback');b.hidden=false;
+    b.innerHTML='<span class="fb-main">'+c.b+'</span><span class="fb-sub">'+c.sub+'</span>'+(c.say?'<span class="hear-row">'+hearBtn(c.say,c.fl)+'</span>':'');
+    this.hidden=true;$('#cgot').hidden=false;$('#cagn').hidden=false;$('#cgot').focus();
+  });
+  $('#cgot').addEventListener('click',function(){C.q.shift();C.done++;showCard();});
+  $('#cagn').addEventListener('click',function(){C.q.shift();C.again++;C.q.splice(Math.min(3,C.q.length),0,c);showCard();});
 }
 
 /* ---------- spot it ---------- */
