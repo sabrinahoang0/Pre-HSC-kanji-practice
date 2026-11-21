@@ -277,7 +277,6 @@ function sheetPage(d){
   '<div class="btn-row"><button type="button" class="btn btn-primary" onclick="window.print()">Print this sheet</button>'+
   (prev?'<a class="btn btn-secondary" href="#/sheet/'+encodeURIComponent(prev.k)+'">← <span lang="ja">'+prev.k+'</span></a>':'')+(next?'<a class="btn btn-secondary" href="#/sheet/'+encodeURIComponent(next.k)+'"><span lang="ja">'+next.k+'</span> →</a>':'')+'</div></div>'+
   '<article class="sheet" aria-label="Practice sheet for '+esc(d.k)+'">'+
-  '<div class="sh-meta"><span>Name: <i></i></span><span>Class: <i></i></span><span>Date: <i></i></span></div>'+
   '<div class="sh-top"><div class="sh-kanji" lang="ja">'+d.k+'</div><div class="sh-info"><div class="sh-title">'+esc(d.label)+'</div>'+
   '<div>On’yomi: <b lang="ja">'+esc(d.on||'–')+'</b> &nbsp; Kun’yomi: <b lang="ja">'+esc(d.kun||'–')+'</b></div><div>'+n+' strokes · '+(d.active?'Active Use (read and write)':'Recognition Only (read)')+'</div></div></div>'+
   '<div class="sh-steps" aria-hidden="true">'+steps+'</div>'+
