@@ -81,6 +81,7 @@ function route(){
   var html='',title='Kanji Practice',init=null;
   if(page==='learn'){html=learnPage();title='Learn';init=learnInit;}
   else if(page==='kanji'&&BY[parts[1]]){var d=BY[parts[1]];html=kanjiPage(d);title=d.k+' '+d.label;init=function(){kanjiInit(d);};}
+  else if(page==='sheet'&&BY[parts[1]]){var sd=BY[parts[1]];html=sheetPage(sd);title='Practice sheet '+sd.k;}
   else if(page==='cards'){html=cardsPage();title='Flashcards';init=cardsInit;}
   else if(page==='practice'){html=practiceSetup();title='Practice';init=practiceInit;}
   else if(page==='spot'){html=spotPage();title='Spot it';init=spotInit;}
@@ -171,7 +172,7 @@ function kanjiPage(d){
   '<fieldset class="speedbar"><legend>Read-aloud speed</legend><label class="chip"><input type="radio" name="spd" value="normal"'+(S.speed!=='slow'?' checked':'')+'><span>Normal</span></label><label class="chip"><input type="radio" name="spd" value="slow"'+(S.speed==='slow'?' checked':'')+'><span>🐢 Slow</span></label></fieldset>'+
   writeSection(d)+'<h2>Example words</h2><ul class="card-list">'+words+'</ul>'+
   '<h2>Example sentences</h2><ol class="card-list nums">'+sents+'</ol>'+
-  ext+'<div class="btn-row no-print"><button type="button" class="btn btn-secondary" onclick="window.print()">Print this page</button></div>'+
+  ext+'<div class="btn-row no-print"><a class="btn btn-primary" href="#/sheet/'+encodeURIComponent(d.k)+'">Printable practice sheet</a><button type="button" class="btn btn-secondary" onclick="window.print()">Print this page</button></div>'+
   '<nav class="pager" aria-label="Previous and next kanji">'+(prev?'<a class="btn btn-secondary" href="#/kanji/'+encodeURIComponent(prev.k)+'" rel="prev">← <span lang="ja">'+prev.k+'</span>&nbsp;'+esc(prev.label)+'</a>':'<span></span>')+(next?'<a class="btn btn-secondary" href="#/kanji/'+encodeURIComponent(next.k)+'" rel="next">'+esc(next.label)+'&nbsp;<span lang="ja">'+next.k+'</span> →</a>':'<span></span>')+'</nav>';
 }
 function kanjiInit(d){
@@ -226,7 +227,7 @@ function writeSection(d){
 }
 function writeInit(d){
   var cv=$('#wcv'),ctx=cv.getContext('2d'),strokes=[],cur=null,drawing=false;
-  function size(){var r=$('#wbox').getBoundingClientRect(),dpr=window.devicePixelRatio||1;cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);redraw();}
+  function size(){if(!document.body.contains(cv)){window.removeEventListener('resize',size);return;}var r=$('#wbox').getBoundingClientRect(),dpr=window.devicePixelRatio||1;cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);redraw();}
   function inkColor(){return getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()||'#000';}
   function redraw(){
     ctx.clearRect(0,0,cv.width,cv.height);ctx.lineCap='round';ctx.lineJoin='round';
@@ -249,6 +250,42 @@ function writeInit(d){
     $('#wresult').innerHTML='<p class="feedback '+(m===n?'good':'bad')+'">'+esc(msg)+'</p><p>Correct kanji, with stroke order:</p>'+svg+'<p class="hint">Check the shape, the order of the strokes and the direction each stroke goes. Choose <strong>Clear</strong> to try again.</p>';
   });
   window.addEventListener('resize',size);size();
+}
+
+/* ---------- printable practice sheet ---------- */
+function gapRuby(d,s){
+  return s.segs.map(function(g){
+    if(g[0]==='R'&&g[1].indexOf(d.k)>=0){return g[1]===d.k?['T','（　　）']:['R',g[1].split(d.k).join('（　）'),g[2]];}
+    if(g[0]==='T'&&g[1].indexOf(d.k)>=0)return ['T',g[1].split(d.k).join('（　　）')];
+    return g;});
+}
+function sheetBoxes(d,nModel,total){
+  var model='<svg viewBox="0 0 109 109" aria-hidden="true">'+d.strokes.map(function(p){return '<path d="'+p+'"></path>';}).join('')+'</svg>';
+  var out='';for(var i=0;i<total;i++)out+='<span class="sh-box'+(i<nModel?' has-model':'')+'">'+(i<nModel?model:'')+'</span>';
+  return out;
+}
+function sheetPage(d){
+  var n=d.strokes.length,prev=K[d.i-1],next=K[d.i+1];
+  var steps=d.strokes.map(function(s,i){
+    var g=d.strokes.slice(0,i+1).map(function(p,j){return '<path'+(j===i?' class="now"':'')+' d="'+p+'"></path>';}).join('');
+    return '<svg viewBox="0 0 109 109" aria-hidden="true">'+g+'</svg>';}).join('');
+  var rows=d.words.slice(0,3).map(function(w){return {w:w.w,e:w.e};}).concat((d.ext||[]).slice(0,2).map(function(w){return {w:w.w,e:w.e,x:true};}));
+  var wordRows=rows.map(function(r){return '<tr><td class="sh-w" lang="ja">'+esc(r.w)+(r.x?' <span class="sh-x">extension</span>':'')+'</td><td class="sh-line"></td><td class="sh-line"></td></tr>';}).join('');
+  var sents=d.sents.slice(0,3).map(function(s,i){return '<li><span class="sh-s" lang="ja">'+ruby(gapRuby(d,s))+'</span><br><span class="sh-en">'+esc(s.eng)+'</span></li>';}).join('');
+  return '<div class="no-print sheet-bar"><p><a href="#/kanji/'+encodeURIComponent(d.k)+'">← Back to the kanji page</a></p>'+
+  '<h1>Practice sheet: '+esc(d.label)+'</h1><p>One A4 page, ready to print for homework or class. In the print window, choose <strong>A4</strong> and turn off “Headers and footers”.</p>'+
+  '<div class="btn-row"><button type="button" class="btn btn-primary" onclick="window.print()">Print this sheet</button>'+
+  (prev?'<a class="btn btn-secondary" href="#/sheet/'+encodeURIComponent(prev.k)+'">← <span lang="ja">'+prev.k+'</span></a>':'')+(next?'<a class="btn btn-secondary" href="#/sheet/'+encodeURIComponent(next.k)+'"><span lang="ja">'+next.k+'</span> →</a>':'')+'</div></div>'+
+  '<article class="sheet" aria-label="Practice sheet for '+esc(d.k)+'">'+
+  '<div class="sh-meta"><span>Name: <i></i></span><span>Class: <i></i></span><span>Date: <i></i></span></div>'+
+  '<div class="sh-top"><div class="sh-kanji" lang="ja">'+d.k+'</div><div class="sh-info"><div class="sh-title">'+esc(d.label)+'</div>'+
+  '<div>On’yomi: <b lang="ja">'+esc(d.on||'–')+'</b> &nbsp; Kun’yomi: <b lang="ja">'+esc(d.kun||'–')+'</b></div><div>'+n+' strokes · '+(d.active?'Active Use (read and write)':'Recognition Only (read)')+'</div></div></div>'+
+  '<div class="sh-steps" aria-hidden="true">'+steps+'</div>'+
+  (d.active?'<h2>1. Write the kanji</h2><div class="sh-boxes">'+sheetBoxes(d,4,20)+'</div>':'<h2>1. Look and trace</h2><div class="sh-boxes">'+sheetBoxes(d,10,10)+'</div>')+
+  '<h2>2. Read and write</h2><table class="sh-table"><thead><tr><th scope="col">Word</th><th scope="col">Reading (hiragana)</th><th scope="col">Meaning (English)</th></tr></thead><tbody>'+wordRows+'</tbody></table>'+
+  '<h2>3. '+(d.active?'Write the missing kanji':'Read each sentence')+'</h2><ol class="sh-sents">'+sents+'</ol>'+
+  '<h2>4. My own sentence</h2><p class="sh-note">Write a sentence in Japanese or English that uses <span lang="ja">'+d.k+'</span> or one of the words above.</p><div class="sh-line big"></div><div class="sh-line big"></div>'+
+  '</article>';
 }
 
 /* ---------- practice ---------- */
