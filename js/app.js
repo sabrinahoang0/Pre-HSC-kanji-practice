@@ -518,6 +518,8 @@ function resourcesPage(){
   '<h2>Printable booklet</h2><p>The kanji booklet has one page for each of the 200 kanji, with stroke order, writing boxes, example sentences and activities.</p>'+
   '<p><a class="btn btn-primary" href="downloads/Prescribed_Kanji_Booklet.pdf" download>Download the booklet (PDF)</a></p>'+
   '<p class="hint">To print one kanji from this website, open its page and choose “Print this page”.</p>'+
+  '<h2>Use offline</h2><p>To use the slides and PDFs with no signal, save them to this device first. This downloads about 25 MB, so do it on Wi-Fi.</p>'+
+  '<p><button type="button" class="btn btn-secondary" id="offline-btn">Save slides and PDFs for offline use</button></p><p id="offline-status" class="status" role="status"></p>'+
   '<h2>Teacher answer key</h2><p>Answers to the booklet activities.</p>'+
   '<p><a class="btn btn-secondary" href="downloads/Prescribed_Kanji_Booklet_Answer_Key.pdf" download>Download the answer key (PDF)</a></p>'+
   '<h2 id="slides-h">Lesson slides</h2><p>View the slides here. Use the buttons, or the left and right arrow keys, to move between slides.</p>'+
@@ -529,7 +531,30 @@ function resourcesPage(){
   '<button type="button" class="btn btn-secondary" id="sl-fs" aria-pressed="false">Full screen</button><label for="sl-go" class="slide-go">Go to slide <input id="sl-go" type="number" min="1" value="1"></label></div>'+
   '<p id="sl-alt" class="hint"></p></div>';
 }
+function offlineInit(){
+  var btn=$('#offline-btn'),st=$('#offline-status');
+  if(!('serviceWorker' in navigator)||!window.caches){btn.hidden=true;st.textContent='Offline saving is not available in this browser.';return;}
+  if(store.get('kanji.offlineSaved',false))st.textContent='Saved on this device. You can use the slides and PDFs with no signal.';
+  btn.addEventListener('click',function(){
+    if(!navigator.serviceWorker.controller){st.textContent='Not ready yet. Reload the page once, then try again.';return;}
+    var urls=['downloads/Prescribed_Kanji_Booklet.pdf','downloads/Prescribed_Kanji_Booklet_Answer_Key.pdf','js/slides.js'];
+    for(var n=1;n<=227;n++)urls.push('slides/'+('00'+n).slice(-3)+'.jpg');
+    var done=0,fail=0,i=0;btn.disabled=true;
+    function next(){
+      if(i>=urls.length)return Promise.resolve();
+      var u=urls[i++];
+      return fetch(u).then(function(r){if(!r.ok)fail++;}).catch(function(){fail++;}).then(function(){done++;if(done%10===0||done===urls.length)st.textContent='Saving… '+done+' of '+urls.length;return next();});
+    }
+    st.textContent='Saving… 0 of '+urls.length;
+    Promise.all([next(),next(),next(),next()]).then(function(){
+      btn.disabled=false;
+      if(fail){st.textContent='Saved most files, but '+fail+' did not download. Check your connection and try again.';}
+      else{store.set('kanji.offlineSaved',true);st.textContent='Saved on this device. You can use the slides and PDFs with no signal.';say('Slides and PDFs saved for offline use.');}
+    });
+  });
+}
 function resourcesInit(){
+  offlineInit();
   var N=227,i=parseInt((function(){try{return sessionStorage.getItem('kanji.slide');}catch(e){return null;}})(),10)||1,img=$('#slimg'),go=$('#sl-go');
   go.max=N;
   function pad(n){return ('00'+n).slice(-3);}
