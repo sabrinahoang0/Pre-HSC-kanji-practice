@@ -637,8 +637,9 @@ function readListPage(){
   return html;
 }
 function readPage(r){
-  var paras=r.text.map(function(t){return '<p class="rp">'+parseMk(t).map(function(g){
-    return g[0]==='R'?'<button type="button" class="rw" aria-label="'+esc(g[1])+', tap to show the reading" data-b="'+esc(g[1])+'" data-r="'+esc(g[2])+'"><ruby>'+esc(g[1])+'<rp>(</rp><rt>'+esc(g[2])+'</rt><rp>)</rp></ruby></button>':esc(g[1]);}).join('')+'</p>';}).join('');
+  function seg2(g){return g[0]==='R'?'<button type="button" class="rw" aria-label="'+esc(g[1])+', tap to show the reading" data-b="'+esc(g[1])+'" data-r="'+esc(g[2])+'"><ruby>'+esc(g[1])+'<rp>(</rp><rt>'+esc(g[2])+'</rt><rp>)</rp></ruby></button>':esc(g[1]);}
+  function units(segs){var out=[],cur=null;segs.forEach(function(g){if(g[0]==='R'||!cur){cur=[];out.push(cur);}cur.push(g);});return out;}
+  var paras=r.text.map(function(t){return '<p class="rp">'+(t.match(/[^。]+。?/g)||[t]).map(function(sn){return '<span class="sn">'+(sn.match(/[^、]+、?/g)||[sn]).map(function(ph){return units(parseMk(ph)).map(function(u){return '<span class="u">'+u.map(seg2).join('')+'</span>';}).join('');}).join('')+'</span>';}).join('')+'</p>';}).join('');
   var kana0=r.text.map(function(t){return kana(parseMk(t));}).join('。').replace(/。。/g,'。');
   var ks=passageKanji(r);
   return '<p><a href="#/read">← All passages</a></p><h1>'+esc(r.en)+' <span class="muted" lang="ja" style="font-size:.7em">'+esc(r.jp)+'</span></h1><p class="muted">'+LEVELS[r.level]+'</p>'+

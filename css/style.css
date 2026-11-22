@@ -306,3 +306,5 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .badge.got{border:2px solid var(--primary);color:var(--text)}.badge strong{color:var(--text)}.badge em{font-style:normal;font-weight:700}
 .b-ico{font-size:1.6rem}.badge.got .b-ico{color:#b8860b}
 .toast{position:fixed;left:50%;bottom:1.2rem;transform:translateX(-50%);background:var(--primary);color:var(--on-primary);padding:.8rem 1.2rem;border-radius:.8rem;font-weight:700;max-width:90vw;z-index:50;box-shadow:0 4px 14px #0004}
+
+.read-text .sn{display:block;word-break:auto-phrase;text-wrap:balance}.read-text .u{white-space:nowrap}
