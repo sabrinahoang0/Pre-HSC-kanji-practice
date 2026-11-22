@@ -641,7 +641,7 @@ function readPage(r){
     return g[0]==='R'?'<button type="button" class="rw" aria-label="'+esc(g[1])+', tap to show the reading" data-b="'+esc(g[1])+'" data-r="'+esc(g[2])+'"><ruby>'+esc(g[1])+'<rp>(</rp><rt>'+esc(g[2])+'</rt><rp>)</rp></ruby></button>':esc(g[1]);}).join('')+'</p>';}).join('');
   var kana0=r.text.map(function(t){return kana(parseMk(t));}).join('。').replace(/。。/g,'。');
   var ks=passageKanji(r);
-  return '<p><a href="#/read">← All passages</a></p><h1>'+esc(r.en)+' <span class="muted" lang="ja" style="font-size:.7em">'+esc(r.jp)+'</span></h1><p class="muted">'+LEVELS[r.level]+'</p>'+
+  return '<p><a href="#/read">← All passages</a></p><h1>'+esc(r.en)+' <span class="muted rjp" lang="ja">'+esc(r.jp)+'</span></h1><p class="muted">'+LEVELS[r.level]+'</p>'+
   '<div class="btn-row"><label class="chip"><input type="checkbox" id="allf"><span>Show all furigana</span></label>'+hearBtn(kana0,'the passage')+'</div>'+
   '<div class="read-text" id="rtext" lang="ja">'+paras+'</div>'+
   '<details class="tr"><summary>Show the English translation</summary>'+r.tr.map(function(t){return '<p>'+esc(t)+'</p>';}).join('')+'</details>'+
