@@ -76,7 +76,9 @@ function hearBtn(text,label){return '<span class="hear"><button type="button" cl
 var first=true,strokeTimer=null;
 function route(){
   if(strokeTimer){clearInterval(strokeTimer);strokeTimer=null;}
-  var h=decodeURIComponent(location.hash||'#/').replace(/^#/,'');
+  var rawh=(location.hash||'#/').replace(/^#/,''),qi=rawh.indexOf('?');
+  var params=new URLSearchParams(qi>=0?rawh.slice(qi+1):'');
+  var h=decodeURIComponent(qi>=0?rawh.slice(0,qi):rawh);
   var parts=h.split('/').filter(Boolean);var page=parts[0]||'home';
   var html='',title='Kanji Practice',init=null;
   if(page==='learn'){html=learnPage();title='Learn';init=learnInit;}
@@ -84,6 +86,9 @@ function route(){
   else if(page==='sheet'&&BY[parts[1]]){var sd=BY[parts[1]];html=sheetPage(sd);title='Practice sheet '+sd.k;}
   else if(page==='cards'){html=cardsPage();title='Flashcards';init=cardsInit;}
   else if(page==='practice'){html=practiceSetup();title='Practice';init=practiceInit;}
+  else if(page==='teacher'){html=teacherPage();title='Teacher tools';init=teacherInit;}
+  else if(page==='quiz'){html='<p>Loading quiz…</p>';title='Quiz';init=function(){assignStart(params);};}
+  else if(page==='test'){html=testPage(params);title=params.get('key')?'Test answer key':'Printable test';}
   else if(page==='spot'){html=spotPage();title='Spot it';init=spotInit;}
   else if(page==='resources'||page==='print'){html=resourcesPage();title='Resources';init=resourcesInit;page='resources';}
   else if(page==='about'){html=aboutPage();title='About and accessibility';init=function(){var w=$('#install-wrap');if(w&&deferredInstall){w.hidden=false;$('#install-btn').addEventListener('click',function(){deferredInstall.prompt();deferredInstall=null;w.hidden=true;});}};}
@@ -288,7 +293,7 @@ function sheetPage(d){
 }
 
 /* ---------- practice ---------- */
-var TYPES={read:'Read it: choose the reading of a word',meaning:'Match it: choose the English meaning of a word',gap:'Write it: choose the missing kanji in a sentence',kanji:'Kanji meaning: choose the meaning of a kanji',ext:'Extension words: read or match harder words from the Stage 6 list',mix:'Mixed: a bit of everything',test:'Test prep: 20 mixed questions, answers shown at the end'};
+var TYPES={read:'Read it: choose the reading of a word',meaning:'Match it: choose the English meaning of a word',gap:'Write it: choose the missing kanji in a sentence',kanji:'Kanji meaning: choose the meaning of a kanji',ext:'Extension words: read or match harder words from the Stage 6 list',listen:'Listening: hear a word, then choose the kanji or the meaning',mix:'Mixed: a bit of everything',test:'Test prep: 20 mixed questions, answers shown at the end'};
 var lastSetup={type:'read',set:'active',n:10};
 var ALLX=[];K.forEach(function(d){(d.ext||[]).forEach(function(w){ALLX.push({w:w.w,r:kana(w.ruby),e:w.e,k:d.k});});});
 var ALLW=[];K.forEach(function(d){d.words.forEach(function(w){ALLW.push({w:w.w,r:w.r,e:w.e,k:d.k});});});
@@ -341,6 +346,12 @@ function buildQuestion(type,d){
     else{ans=w0.e;opts=[ans].concat(distract(ALLX,ans,3,function(x){return x.e;},false));q.prompt='What does this word mean?';q.optHtml=function(o){return esc(o);};}
     q.show='<span lang="ja">'+esc(w0.w)+'</span>';q.explain=w0.w+' is read '+w0.r+' and means “'+w0.e+'”.';
     q.opts=shuffle(opts);q.ans=q.opts.indexOf(ans);q.ansText=ans;return q;}
+  if(type==='listen'){
+    var lw=pick(d.words),lk=Math.random()<.5,lpool=ALLW.filter(function(x){return x.r!==lw.r;});
+    if(lk){ans=lw.w;opts=[ans].concat(distract(lpool,ans,3,function(x){return x.w;},true));q.prompt='Listen to the word. Which one did you hear?';q.optHtml=function(o){return '<span class="jp" lang="ja">'+esc(o)+'</span>';};}
+    else{ans=lw.e;opts=[ans].concat(distract(lpool,ans,3,function(x){return x.e;},false));q.prompt='Listen to the word. What does it mean?';q.optHtml=function(o){return esc(o);};}
+    q.show=hearBtn(lw.r,'the word');q.small=true;q.explain=lw.w+' is read '+lw.r+' and means “'+lw.e+'”.';
+    q.opts=shuffle(opts);q.ans=q.opts.indexOf(ans);q.ansText=ans;return q;}
   if(type==='read'||type==='meaning'){
     var w=pick(d.words);q.w=w;
     if(type==='read'){ans=w.r;opts=[ans].concat(distract(ALLW,ans,3,function(x){return x.r;},true));
@@ -368,18 +379,18 @@ function buildQuestion(type,d){
   return q;
 }
 var Q=null;
-function startQuiz(){
+function startQuiz(a){
   var pool=poolFor(lastSetup.set);
   if(lastSetup.type==='ext')pool=pool.filter(function(d){return d.ext&&d.ext.length;});
   if(!pool.length){main.innerHTML=practiceSetup(lastSetup.type==='ext'?'No kanji in that set have extension words. Choose a different set.':(lastSetup.set==='weak'?'You have no weak kanji right now. Do a quiz first, and any kanji you miss will be added here.':'You have not marked any kanji as learned yet. Choose a different set, or mark some kanji on their pages.'));practiceInit();return;}
   var isTest=lastSetup.type==='test';var want=isTest?20:lastSetup.n;
   pool=shuffle(pool);var N=want;
   var qs=[];for(var i=0;i<N;i++){qs.push(buildQuestion(lastSetup.type,pool[i%pool.length]));}
-  Q={qs:qs,i:0,score:0,miss:[],test:isTest};showQuestion();
+  Q={qs:qs,i:0,score:0,miss:[],test:isTest,assign:(a&&a.title!==undefined)?a:null};showQuestion();
 }
 function showQuestion(){
   var q=Q.qs[Q.i],N=Q.qs.length,pct=Math.round(Q.i/N*100);
-  main.innerHTML='<h1 id="qh" tabindex="-1">Question '+(Q.i+1)+' of '+N+'</h1>'+
+  main.innerHTML=(Q.assign&&Q.assign.title?'<p class="muted"><strong>'+esc(Q.assign.title)+'</strong></p>':'')+'<h1 id="qh" tabindex="-1">Question '+(Q.i+1)+' of '+N+'</h1>'+
   '<div class="meter" role="progressbar" aria-label="Quiz progress" aria-valuemin="0" aria-valuemax="'+N+'" aria-valuenow="'+Q.i+'"><span style="width:'+pct+'%"></span></div>'+
   '<form id="qf" class="q-card" novalidate><fieldset class="opts"><legend><span class="q-prompt">'+esc(q.prompt)+'</span><span class="q-show'+(q.small?' small':'')+'">'+q.show+'</span></legend>'+
   q.opts.map(function(o,j){return '<label><input type="radio" name="a" value="'+j+'"> <span>'+q.optHtml(o)+'</span></label>';}).join('')+
@@ -406,18 +417,136 @@ function showQuestion(){
 }
 function plainOpt(q,o){return o;}
 function showResults(){
-  var N=Q.qs.length,pct=Math.round(Q.score/N*100);
+  var N=Q.qs.length,pct=Math.round(Q.score/N*100),score0=Q.score;
   var best=store.get('kanji.best',{});var prev=best[lastSetup.type];
-  if(prev==null||pct>prev){best[lastSetup.type]=pct;store.set('kanji.best',best);}
+  if(!Q.assign&&(prev==null||pct>prev)){best[lastSetup.type]=pct;store.set('kanji.best',best);}
   var msg=Q.test&&pct<60?'Keep going. Go back to the kanji below, then try another test.':pct>=85?'Excellent work!':pct>=60?'Good effort. A little more practice and you will have it.':'Keep going. Review the kanji below and try again.';
   var missed={};Q.miss.forEach(function(m){missed[m.q.d.k]=1;});
   var rows=Q.miss.map(function(m){var q=m.q;return '<tr><td>'+q.show+'</td><td lang="ja">'+esc(m.chosen)+'</td><td lang="ja">'+esc(q.ansText)+'</td></tr>';}).join('');
   main.innerHTML='<h1 id="qh" tabindex="-1">'+(Q.test?'Your test results':'Your results')+'</h1><p class="result-big">'+Q.score+' out of '+N+' ('+pct+'%)</p>'+
   '<div class="meter" role="img" aria-label="'+pct+' percent correct"><span style="width:'+pct+'%"></span></div><p>'+msg+'</p>'+
   (Q.miss.length?'<h2>Questions to review</h2><table><thead><tr><th scope="col">Question</th><th scope="col">Your answer</th><th scope="col">Correct answer</th></tr></thead><tbody>'+rows+'</tbody></table><h2>Go back to these kanji</h2><ul class="tiles" style="grid-template-columns:repeat(auto-fill,minmax(8rem,1fr))">'+Object.keys(missed).map(function(k){return '<li class="tile"><a href="#/kanji/'+encodeURIComponent(k)+'"><strong lang="ja">'+k+'</strong>'+esc(BY[k].label)+'</a></li>';}).join('')+'</ul>':'<p>You got every question right!</p>')+
-  '<div class="btn-row"><button class="btn btn-primary" id="again" type="button">Try again</button><a class="btn btn-secondary" href="#/practice">Change quiz</a></div>';
+  (Q.assign?'<h2>Send your result to your teacher</h2><p>This site does not send your score anywhere. Type your name, copy your result, then paste it where your teacher asked (email, class chat or your learning platform).</p><div class="form-grid"><div><label for="rname"><strong>Your name</strong></label><br><input id="rname" type="text" autocomplete="name"></div><div><button class="btn btn-secondary" id="rcopy" type="button">Copy my result</button></div></div><p id="rstat" role="status"></p>':'')+
+  '<div class="btn-row"><button class="btn btn-primary" id="again" type="button">Try again</button><a class="btn btn-secondary" href="#/practice">More practice</a></div>';
   $('#qh').focus();say('Quiz finished. You scored '+Q.score+' out of '+N+'.');
-  $('#again').addEventListener('click',startQuiz);
+  var asg=Q.assign;
+  $('#again').addEventListener('click',function(){startQuiz(asg);});
+  if(asg){var rc=$('#rcopy');rc.addEventListener('click',function(){
+    var nm=$('#rname').value.trim()||'(no name)';
+    var txt=nm+' | '+(asg.title||'Kanji quiz')+' | '+score0+' out of '+N+' ('+pct+'%) | '+new Date().toLocaleDateString();
+    copyText(txt,$('#rname'),function(ok){$('#rstat').textContent=ok?'Copied: '+txt:'Could not copy automatically. Select and copy this text: '+txt;});});}
+}
+
+/* ---------- teacher tools: assignment links, printable test ---------- */
+function copyText(txt,el,cb){
+  function fallback(){var ta=document.createElement('textarea');ta.value=txt;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand('copy');}catch(e){}document.body.removeChild(ta);cb(ok);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){cb(true);},fallback);}else fallback();
+}
+function sharedSetOptions(sel){
+  var o=[['all','All 200 kanji'],['active','Active Use (150)'],['recog','Recognition Only (50)']];
+  CATS.forEach(function(c){o.push(['cat:'+c.name,c.name+' ('+c.part+')']);});
+  return o.map(function(x){return '<option value="'+esc(x[0])+'"'+(sel===x[0]?' selected':'')+'>'+esc(x[1])+'</option>';}).join('');
+}
+function sharedSetOk(s){return s==='all'||s==='active'||s==='recog'||(s&&s.indexOf('cat:')===0&&CATS.some(function(c){return 'cat:'+c.name===s;}));}
+function setLabel(s){var f=null;[['all','All 200 kanji'],['active','Active Use kanji'],['recog','Recognition Only kanji']].forEach(function(x){if(x[0]===s)f=x[1];});if(f)return f;return s.indexOf('cat:')===0?s.slice(4):'Selected kanji';}
+function assignStart(p){
+  var type=p.get('type'),set=p.get('set'),n=parseInt(p.get('n'),10);
+  if(!TYPES[type])type='read';
+  if(!sharedSetOk(set))set='active';
+  if(!(n>=3&&n<=50))n=10;
+  lastSetup={type:type,set:set,n:n};
+  startQuiz({title:(p.get('title')||'').slice(0,80)});
+}
+function baseUrl(){return location.href.split('#')[0];}
+function teacherPage(){
+  return '<h1>Teacher tools</h1><p>Two tools for setting work. Nothing here needs an account, and nothing is stored on a server.</p>'+
+  '<h2>1. Assignment link and QR code</h2><p>Choose a quiz. You get a link and a QR code. Students open it and land straight on that quiz, with no menus to get through.</p>'+
+  '<form id="tform" class="form-grid" onsubmit="return false">'+
+  '<div><label for="at"><strong>Title (shown to students)</strong></label><br><input id="at" type="text" maxlength="80" placeholder="Time kanji reading quiz" value="Kanji quiz"></div>'+
+  '<div><label for="atype"><strong>Quiz type</strong></label><br><select id="atype">'+Object.keys(TYPES).map(function(t){return '<option value="'+t+'"'+(t==='read'?' selected':'')+'>'+esc(TYPES[t])+'</option>';}).join('')+'</select></div>'+
+  '<div><label for="aset"><strong>Which kanji?</strong></label><br><select id="aset">'+sharedSetOptions('active')+'</select></div>'+
+  '<div><label for="an"><strong>Number of questions</strong></label><br><select id="an">'+[5,10,15,20,30].map(function(n){return '<option'+(n===10?' selected':'')+'>'+n+'</option>';}).join('')+'</select></div></form>'+
+  '<div id="aout" role="status" aria-live="polite"></div>'+
+  '<p class="hint"><strong>About results:</strong> this site has no server, so you cannot see scores. At the end of the quiz, students can type their name and tap <strong>Copy my result</strong>, then paste it to you in email, class chat or your learning platform.</p>'+
+  '<h2>2. Printable test with answer key</h2><p>Choose a kanji set and a length. You get an A4 test and a matching answer key, built from the same words and sentences as the site. Changing the version number gives a different set of questions, so you can make Version A and Version B.</p>'+
+  '<form id="pform" class="form-grid" onsubmit="return false">'+
+  '<div><label for="pt"><strong>Test title</strong></label><br><input id="pt" type="text" maxlength="80" value="Kanji Test"></div>'+
+  '<div><label for="pset"><strong>Which kanji?</strong></label><br><select id="pset">'+sharedSetOptions('active')+'</select></div>'+
+  '<div><label for="plen"><strong>Length</strong></label><br><select id="plen"><option value="15">Short (15 marks)</option><option value="30" selected>Standard (30 marks)</option><option value="45">Long (45 marks)</option></select></div>'+
+  '<div><label for="pv"><strong>Version number</strong></label><br><input id="pv" type="number" min="1" max="999" value="1"></div></form>'+
+  '<div class="btn-row"><a class="btn btn-primary" id="ptest" href="#/test">Open the test</a><a class="btn btn-secondary" id="pkey" href="#/test">Open the answer key</a></div>'+
+  '<p class="hint">In the print window, choose <strong>A4</strong> and turn off “Headers and footers”. The answer key page has a web address anyone could open, so print it for yourself rather than sharing the link with students.</p>';
+}
+function teacherInit(){
+  var qrObj=null;
+  function link(){
+    var p=new URLSearchParams();p.set('type',$('#atype').value);p.set('set',$('#aset').value);p.set('n',$('#an').value);var t=$('#at').value.trim();if(t)p.set('title',t);
+    return baseUrl()+'#/quiz?'+p.toString();
+  }
+  function drawQr(cv,url,scale){
+    var qr=qrcode(0,'M');qr.addData(url);qr.make();var n=qr.getModuleCount(),m=4;
+    cv.width=cv.height=(n+m*2)*scale;var c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,cv.width,cv.height);c.fillStyle='#000';
+    for(var r=0;r<n;r++)for(var col=0;col<n;col++)if(qr.isDark(r,col))c.fillRect((col+m)*scale,(r+m)*scale,scale,scale);
+  }
+  function renderA(){
+    var url=link();qrObj=url;
+    $('#aout').innerHTML='<div class="form-grid"><div><label for="alink"><strong>Link for students</strong></label><br><input id="alink" type="text" readonly value="'+esc(url)+'" style="width:100%"></div>'+
+    '<div class="btn-row"><button type="button" class="btn btn-primary" id="acopy">Copy link</button><a class="btn btn-secondary" href="'+esc(url)+'" target="_blank" rel="noopener">Try the quiz</a></div><p id="astat" role="status"></p>'+
+    '<div><canvas id="qrc" role="img" aria-label="QR code for the assignment link" style="width:220px;max-width:100%;height:auto;image-rendering:pixelated;background:#fff;border:1px solid #888"></canvas></div>'+
+    '<div class="btn-row"><button type="button" class="btn btn-secondary" id="qrdl">Download QR code (PNG)</button></div></div>';
+    try{drawQr($('#qrc'),url,6);}catch(e){$('#qrc').outerHTML='<p class="feedback bad">That link is too long for a QR code. Shorten the title.</p>';}
+    $('#acopy').addEventListener('click',function(){copyText(url,null,function(ok){$('#astat').textContent=ok?'Link copied.':'Could not copy automatically. Select the link above and copy it.';});});
+    $('#alink').addEventListener('focus',function(e){e.target.select();});
+    $('#qrdl').addEventListener('click',function(){
+      var cv=document.createElement('canvas');try{drawQr(cv,url,12);}catch(e){return;}
+      cv.toBlob(function(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='kanji-quiz-qr.png';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(a.href);},1000);});
+    });
+  }
+  function renderP(){
+    var p=new URLSearchParams();p.set('set',$('#pset').value);p.set('len',$('#plen').value);p.set('v',String(Math.max(1,parseInt($('#pv').value,10)||1)));var t=$('#pt').value.trim();if(t)p.set('title',t);
+    $('#ptest').setAttribute('href','#/test?'+p.toString());p.set('key','1');$('#pkey').setAttribute('href','#/test?'+p.toString());
+  }
+  $$('#tform input,#tform select').forEach(function(e){e.addEventListener('input',renderA);e.addEventListener('change',renderA);});
+  $$('#pform input,#pform select').forEach(function(e){e.addEventListener('input',renderP);e.addEventListener('change',renderP);});
+  renderA();renderP();
+}
+function hashSeed(str){var h=2166136261;for(var i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function testPage(p){
+  var set=p.get('set'),len=parseInt(p.get('len'),10),v=Math.max(1,parseInt(p.get('v'),10)||1),key=!!p.get('key'),title=(p.get('title')||'Kanji Test').slice(0,80);
+  if(!sharedSetOk(set))set='active';if([15,30,45].indexOf(len)<0)len=30;
+  var rnd=mulberry32(hashSeed(set+'|'+len+'|'+v));
+  function rp(a){return a[Math.floor(rnd()*a.length)];}
+  function rs(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(rnd()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+  var pool=poolFor(set).filter(function(d){return d.words&&d.words.length;});
+  var act=pool.filter(function(d){return d.active&&d.sents&&d.sents.length;});
+  var nA=Math.round(len*.4),nB=Math.floor(len*.3),nC=Math.round(len*.2),nD=len-nA-nB-nC;
+  if(!act.length){nB+=nC;nC=0;}
+  var order=rs(pool),oi=0,aord=rs(act),ai=0;
+  function nextK(){var d=order[oi%order.length];oi++;return d;}
+  function nextA(){var d=aord[ai%aord.length];ai++;return d;}
+  var num=0;
+  function li(show,ans){num++;return '<li class="t-item"><span class="t-n">'+num+'.</span><span class="t-w" lang="ja">'+show+'</span>'+(key?'<span class="t-ans">'+esc(ans)+'</span>':'<span class="t-line"></span>')+'</li>';}
+  var secs=[];
+  var a='';for(var i=0;i<nA;i++){var d=nextK(),w=rp(d.words);a+=li(esc(w.w),w.r);}
+  secs.push(['A','Write the reading of each word in hiragana.',a,'t-grid']);
+  var b='';for(i=0;i<nB;i++){d=nextK();w=rp(d.words);b+=li(esc(w.w),w.e);}
+  secs.push(['B','Write the English meaning of each word.',b,'t-grid']);
+  if(nC){var c='';for(i=0;i<nC;i++){d=nextA();var s=rp(d.sents);num++;
+    c+='<li class="t-sent"><span class="t-n">'+num+'.</span><span class="t-s" lang="ja">'+ruby(gapRuby(d,s))+'</span><span class="t-box'+(key?' on':'')+'" lang="ja">'+(key?esc(d.k):'')+'</span><span class="t-en">'+esc(s.eng)+'</span></li>';}
+    secs.push(['C','Write the missing kanji in each sentence.',c,'t-list']);}
+  if(nD){var dd='';for(i=0;i<nD;i++){d=nextK();dd+=li(esc(d.k),d.label);}
+    secs.push(['D','Write the English meaning of each kanji.',dd,'t-grid']);}
+  var body=secs.map(function(x){return '<section class="t-sec"><h2>Part '+x[0]+': '+x[1]+'</h2><ol class="'+x[3]+'">'+x[2]+'</ol></section>';}).join('');
+  var q=new URLSearchParams();q.set('set',set);q.set('len',String(len));q.set('v',String(v));q.set('title',title);
+  var other='#/test?'+q.toString()+(key?'':'&key=1');
+  var empty=!pool.length;
+  return '<div class="no-print sheet-bar"><p><a href="#/teacher">← Back to teacher tools</a></p><h1>'+(key?'Answer key':'Printable test')+'</h1>'+
+  '<p>One mark per question, '+len+' marks in total. In the print window, choose <strong>A4</strong> and turn off “Headers and footers”.</p>'+
+  '<div class="btn-row"><button type="button" class="btn btn-primary" onclick="window.print()">Print '+(key?'the answer key':'this test')+'</button><a class="btn btn-secondary" href="'+esc(other)+'">'+(key?'Show the test':'Show the answer key')+'</a></div></div>'+
+  (empty?'<p class="feedback bad">No kanji found for that set.</p>':
+  '<article class="sheet test" aria-label="'+(key?'Answer key':'Test')+'"><div class="t-head"><div class="t-title">'+esc(title)+(key?' <span class="t-keytag">ANSWER KEY</span>':'')+'</div><div>'+esc(setLabel(set))+' · Version '+v+' · '+len+' marks</div>'+
+  (key?'':'<div class="sh-meta"><span>Name <i></i></span><span>Class <i></i></span><span>Score <i></i>/ '+len+'</span></div>')+'</div>'+body+'</article>');
 }
 
 /* ---------- flashcards ---------- */

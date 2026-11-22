@@ -2,7 +2,7 @@
    Core files are saved on the first visit. Slides, PDFs and other files are saved the first time they are opened.
    When online, the newest version is always fetched first. */
 var CACHE='kanji-practice-v1';
-var CORE=['./','index.html','css/style.css','js/data.js','js/app.js','js/slides.js','manifest.webmanifest',
+var CORE=['./','index.html','css/style.css','js/data.js','js/app.js','js/qrcode.js','js/slides.js','manifest.webmanifest',
  'icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png',
  'fonts/atkinson-hyperlegible-latin-400-normal.woff2','fonts/atkinson-hyperlegible-latin-700-normal.woff2',
  'fonts/opendyslexic-latin-400-normal.woff2','fonts/opendyslexic-latin-700-normal.woff2'];
