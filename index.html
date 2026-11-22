@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Kanji">
-<link rel="stylesheet" href="css/style.css?v=13">
+<link rel="stylesheet" href="css/style.css?v=14">
 <script>
 /* Apply saved settings before first paint so the page does not flash. */
 (function(){try{var s=JSON.parse(localStorage.getItem('kanji.settings')||'{}');var h=document.documentElement;
@@ -27,9 +27,11 @@ if(s.size)h.style.setProperty('--text-scale',s.size/100);}catch(e){}})();
     <ul class="nav-list">
       <li><a href="#/learn" data-nav="learn">Learn</a></li>
       <li><a href="#/practice" data-nav="practice">Practice</a></li>
+      <li><a href="#/read" data-nav="read">Reading</a></li>
       <li><a href="#/cards" data-nav="cards">Flashcards</a></li>
       <li><a href="#/spot" data-nav="spot">Spot it</a></li>
       <li><a href="#/resources" data-nav="resources">Resources</a></li>
+      <li><a href="#/progress" data-nav="progress">My progress</a></li>
     </ul>
   </nav>
   <button type="button" id="open-settings" class="btn btn-secondary" aria-haspopup="dialog">Display and sound settings</button>
@@ -104,9 +106,10 @@ if(s.size)h.style.setProperty('--text-scale',s.size/100);}catch(e){}})();
 
 <div id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 <script>if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
-<script src="js/qrcode.js?v=13"></script>
-<script src="js/data.js?v=13"></script>
-<script src="js/app.js?v=13"></script>
+<script src="js/qrcode.js?v=14"></script>
+<script src="js/data.js?v=14"></script>
+<script src="js/readings.js?v=14"></script>
+<script src="js/app.js?v=14"></script>
 <noscript><p class="noscript">This site needs JavaScript to show the kanji pages. You can still download the printable booklet from the <a href="downloads/Prescribed_Kanji_Booklet.pdf">downloads folder</a>.</p></noscript>
 </body>
 </html>

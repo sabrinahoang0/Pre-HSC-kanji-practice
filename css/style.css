@@ -286,3 +286,23 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .t-box{width:14mm;height:14mm;border:1px solid #000;font-family:var(--font-jp);font-size:22px;display:grid;place-items:center;color:#a00;font-weight:700}
 .t-en{flex-basis:100%;padding-left:9mm;font-size:10px}
 @media print{.sheet.test{break-inside:auto}.t-sec{break-inside:auto}}
+
+/* reading */
+.read-text{font-family:var(--font-jp);font-size:1.5rem;line-height:2.6;max-width:42rem;margin:1rem 0}
+.read-text .rp{margin:0 0 .6em}
+.rw{font:inherit;color:inherit;background:none;border:0;border-bottom:2px dotted var(--primary);padding:0 1px;margin:0;cursor:pointer;min-height:0;border-radius:2px}
+.rw:hover{background:var(--bg-soft)}
+.read-text rt{display:revert!important;visibility:hidden;font-size:.5em}
+.read-text .rw.on rt,.read-text.all rt{visibility:visible}
+.tr{margin:1rem 0;padding:.6rem 1rem;border:2px solid var(--border);border-radius:.7rem}.tr summary{cursor:pointer;font-weight:700}
+.rqf{margin:0 0 1rem}.rfb{margin:.4rem 0 0}.rfb:empty{display:none}
+.chips-row{display:flex;flex-wrap:wrap;gap:.4rem;list-style:none;padding:0}.chips-row .btn{font-size:1.3rem;min-width:3rem}
+/* progress */
+.streak-card{background:var(--bg-soft);border-radius:1rem;padding:1rem 1.5rem;margin:1rem 0}
+.streak-big{font-size:2rem;font-weight:700;margin:.2rem 0}
+.stats{list-style:none;padding:0;display:grid;gap:.8rem}.stats strong{font-size:1.4rem;color:var(--primary)}
+.badges{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:.8rem}
+.badge{border:2px dashed var(--border);border-radius:.9rem;padding:.9rem;display:grid;gap:.25rem;background:var(--bg-card);color:var(--text-soft)}
+.badge.got{border:2px solid var(--primary);color:var(--text)}.badge strong{color:var(--text)}.badge em{font-style:normal;font-weight:700}
+.b-ico{font-size:1.6rem}.badge.got .b-ico{color:#b8860b}
+.toast{position:fixed;left:50%;bottom:1.2rem;transform:translateX(-50%);background:var(--primary);color:var(--on-primary);padding:.8rem 1.2rem;border-radius:.8rem;font-weight:700;max-width:90vw;z-index:50;box-shadow:0 4px 14px #0004}

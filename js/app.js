@@ -44,14 +44,77 @@ var weak=store.get('kanji.weak',{});
 function weakList(){return Object.keys(weak).filter(function(k){return BY[k];});}
 function recordAnswer(k,ok){
   if(!BY[k])return;
+  act.answered++;if(ok)act.correct++;markActive();
   if(!ok){weak[k]=2;}
   else if(weak[k]){weak[k]--;if(weak[k]<=0)delete weak[k];}
   store.set('kanji.weak',weak);
 }
 var learned=store.get('kanji.learned',{});
 function isLearned(k){return !!learned[k];}
-function setLearned(k,v){if(v)learned[k]=1;else delete learned[k];store.set('kanji.learned',learned);}
+function setLearned(k,v){if(v){learned[k]=1;markActive();}else delete learned[k];store.set('kanji.learned',learned);if(v)checkBadges();}
 function learnedCount(){return Object.keys(learned).filter(function(k){return BY[k];}).length;}
+
+/* ---------- streaks and badges (saved only on this device) ---------- */
+var act=Object.assign({days:[],answered:0,correct:0,quizzes:0,perfect:0,reads:{}},store.get('kanji.act',{}));
+var earned=store.get('kanji.badges',{});
+function saveAct(){store.set('kanji.act',act);}
+function p2(n){return n<10?'0'+n:''+n;}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
+function dayNum(s){var p=s.split('-');return Math.round(Date.UTC(+p[0],+p[1]-1,+p[2])/864e5);}
+function markActive(){var t=todayStr();if(act.days.indexOf(t)<0){act.days.push(t);if(act.days.length>500)act.days=act.days.slice(-500);}saveAct();}
+function streakInfo(){
+  var set={};act.days.forEach(function(d){set[dayNum(d)]=1;});
+  var t=dayNum(todayStr()),n=set[t]?t:t-1,c=0;while(set[n]){c++;n--;}
+  var best=0,run=0,prev=null;Object.keys(set).map(Number).sort(function(a,b){return a-b;}).forEach(function(x){run=(prev!==null&&x===prev+1)?run+1:1;if(run>best)best=run;prev=x;});
+  return {n:c,today:!!set[t],best:Math.max(best,c)};
+}
+function readsDone(){return Object.keys(act.reads).filter(function(k){return act.reads[k]>=0;}).length;}
+var BADGES=[
+ {id:'k1',name:'First kanji',desc:'Mark 1 kanji as learned.',ok:function(){return learnedCount()>=1;}},
+ {id:'k10',name:'10 kanji learned',desc:'Mark 10 kanji as learned.',ok:function(){return learnedCount()>=10;}},
+ {id:'k50',name:'50 kanji learned',desc:'Mark 50 kanji as learned.',ok:function(){return learnedCount()>=50;}},
+ {id:'k100',name:'100 kanji learned',desc:'Mark 100 kanji as learned.',ok:function(){return learnedCount()>=100;}},
+ {id:'k200',name:'All 200 kanji',desc:'Mark all 200 kanji as learned.',ok:function(){return learnedCount()>=200;}},
+ {id:'s3',name:'3 days in a row',desc:'Practise on 3 days in a row.',ok:function(){return streakInfo().best>=3;}},
+ {id:'s7',name:'7 days in a row',desc:'Practise on 7 days in a row.',ok:function(){return streakInfo().best>=7;}},
+ {id:'s14',name:'14 days in a row',desc:'Practise on 14 days in a row.',ok:function(){return streakInfo().best>=14;}},
+ {id:'q1',name:'First quiz',desc:'Finish a quiz.',ok:function(){return act.quizzes>=1;}},
+ {id:'q10',name:'10 quizzes',desc:'Finish 10 quizzes.',ok:function(){return act.quizzes>=10;}},
+ {id:'perfect',name:'Perfect score',desc:'Get every question right in a quiz of 5 or more questions.',ok:function(){return act.perfect>=1;}},
+ {id:'c100',name:'100 correct answers',desc:'Answer 100 quiz questions correctly.',ok:function(){return act.correct>=100;}},
+ {id:'r1',name:'First reading',desc:'Finish the questions on a reading passage.',ok:function(){return readsDone()>=1;}},
+ {id:'rall',name:'Reading champion',desc:'Finish every reading passage.',ok:function(){return readsDone()>=window.READINGS.length;}}
+];
+var toastT=null;
+function toast(msg){
+  var t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';t.setAttribute('aria-hidden','true');document.body.appendChild(t);}
+  t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true;},7000);say(msg);
+}
+function checkBadges(){
+  var fresh=[];
+  BADGES.forEach(function(b){if(!earned[b.id]&&b.ok()){earned[b.id]=todayStr();fresh.push(b.name);}});
+  if(fresh.length){store.set('kanji.badges',earned);toast('New badge: '+fresh.join(', ')+'! See My progress.');}
+}
+function progressPage(){
+  var s=streakInfo(),n=learnedCount(),total=K.length,pct=Math.round(n/total*100);
+  var msg=s.n===0?'Do a quiz, read a passage or mark a kanji as learned today to start your streak.':(s.today?'You have practised today. Come back tomorrow to keep it going.':'Do something today to keep your streak going.');
+  var done=Object.keys(earned).filter(function(k){return BADGES.some(function(b){return b.id===k;});}).length;
+  return '<h1>My progress</h1><p>Your streak, your badges and your totals. All of it is saved only on this device. Nothing is sent to anyone.</p>'+
+  '<section class="streak-card" aria-labelledby="sh"><h2 id="sh">Streak</h2><p class="streak-big"><span aria-hidden="true">🔥</span> '+s.n+' '+(s.n===1?'day':'days')+' in a row</p><p>'+msg+'</p><p class="muted">Best streak: '+s.best+' '+(s.best===1?'day':'days')+'. Days practised in total: '+act.days.length+'.</p></section>'+
+  '<h2>Totals</h2><ul class="stats"><li><strong>'+n+'</strong> of '+total+' kanji marked as learned<div class="meter" role="img" aria-label="'+pct+' percent of kanji learned"><span style="width:'+pct+'%"></span></div></li>'+
+  '<li><strong>'+act.quizzes+'</strong> quizzes finished</li><li><strong>'+act.correct+'</strong> questions answered correctly (out of '+act.answered+')</li><li><strong>'+readsDone()+'</strong> of '+window.READINGS.length+' reading passages finished</li></ul>'+
+  '<h2>Badges ('+done+' of '+BADGES.length+')</h2><ul class="badges">'+BADGES.map(function(b){var e=earned[b.id];
+    return '<li class="badge'+(e?' got':'')+'"><span class="b-ico" aria-hidden="true">'+(e?'★':'🔒')+'</span><strong>'+esc(b.name)+'</strong><span>'+esc(b.desc)+'</span><em>'+(e?'Earned '+esc(e):'Not earned yet')+'</em></li>';}).join('')+'</ul>'+
+  '<h2>Start again</h2><p>This clears your streak, badges and totals on this device. Your learned kanji and weak kanji are not changed.</p><p><button class="btn btn-secondary" id="preset" type="button">Reset streak and badges</button></p><p id="pstat" role="status"></p>';
+}
+function progressInit(){
+  checkBadges();
+  var b=$('#preset'),armed=false;
+  b.addEventListener('click',function(){
+    if(!armed){armed=true;b.textContent='Press again to confirm the reset';$('#pstat').textContent='Press the button again to clear your streak and badges.';return;}
+    act={days:[],answered:0,correct:0,quizzes:0,perfect:0,reads:{}};earned={};saveAct();store.set('kanji.badges',earned);main.innerHTML=progressPage();progressInit();say('Streak and badges reset.');
+  });
+}
 
 /* ---------- text helpers ---------- */
 function ruby(segs){return segs.map(function(s){return s[0]==='R'?'<ruby>'+esc(s[1])+'<rp aria-hidden="true">(</rp><rt aria-hidden="true">'+esc(s[2])+'</rt><rp aria-hidden="true">)</rp></ruby>':esc(s[1]);}).join('');}
@@ -86,6 +149,9 @@ function route(){
   else if(page==='sheet'&&BY[parts[1]]){var sd=BY[parts[1]];html=sheetPage(sd);title='Practice sheet '+sd.k;}
   else if(page==='cards'){html=cardsPage();title='Flashcards';init=cardsInit;}
   else if(page==='practice'){html=practiceSetup();title='Practice';init=practiceInit;}
+  else if(page==='read'&&parts[1]&&readById(parts[1])){var rp=readById(parts[1]);html=readPage(rp);title=rp.en;init=function(){readInit(rp);};}
+  else if(page==='read'){html=readListPage();title='Reading';}
+  else if(page==='progress'){html=progressPage();title='My progress';init=progressInit;}
   else if(page==='teacher'){html=teacherPage();title='Teacher tools';init=teacherInit;}
   else if(page==='quiz'){html='<p>Loading quiz…</p>';title='Quiz';init=function(){assignStart(params);};}
   else if(page==='test'){html=testPage(params);title=params.get('key')?'Test answer key':'Printable test';}
@@ -105,10 +171,12 @@ window.addEventListener('hashchange',route);
 /* ---------- home ---------- */
 function homePage(){
   var n=learnedCount();
-  return '<section class="hero"><div class="hero-kanji" lang="ja" aria-hidden="true">漢字</div><div><h1>Kanji Practice</h1><p>Learn the 200 prescribed kanji. See how each one is written, hear it, read example words and sentences, then test yourself.</p><p class="progress-line">You have marked '+n+' of '+K.length+' kanji as learned.</p></div></section>'+
+  return '<section class="hero"><div class="hero-kanji" lang="ja" aria-hidden="true">漢字</div><div><h1>Kanji Practice</h1><p>Learn the 200 prescribed kanji. See how each one is written, hear it, read example words and sentences, then test yourself.</p><p class="progress-line">You have marked '+n+' of '+K.length+' kanji as learned.</p>'+(streakInfo().n>0?'<p class="progress-line"><span aria-hidden="true">🔥</span> '+streakInfo().n+' '+(streakInfo().n===1?'day':'days')+' in a row. <a href="#/progress">See my badges</a></p>':'')+'</div></section>'+
   '<ul class="tiles">'+
   '<li class="tile"><a href="#/learn"><strong>Learn</strong>Open any kanji: readings, stroke order, example words and sentences.</a></li>'+
   '<li class="tile"><a href="#/practice"><strong>Practice</strong>Quizzes on readings, meanings and missing kanji. Marked for you.</a></li>'+
+  '<li class="tile"><a href="#/read"><strong>Reading</strong>Short passages with tap-to-show furigana and questions.</a></li>'+
+  '<li class="tile"><a href="#/progress"><strong>My progress</strong>Your streak and badges.</a></li>'+
   '<li class="tile"><a href="#/spot"><strong>Spot it</strong>Find the real kanji hidden among look-alikes.</a></li>'+
   '<li class="tile"><a href="#/resources"><strong>Resources</strong>Printable booklet and lesson slides.</a></li></ul>'+
   '<p>Use <strong>Display and sound settings</strong> at the top of every page to change colours, text size, font, spacing, furigana, movement and read-aloud speed.</p>';
@@ -418,6 +486,7 @@ function showQuestion(){
 function plainOpt(q,o){return o;}
 function showResults(){
   var N=Q.qs.length,pct=Math.round(Q.score/N*100),score0=Q.score;
+  act.quizzes++;if(pct===100&&N>=5)act.perfect++;markActive();checkBadges();
   var best=store.get('kanji.best',{});var prev=best[lastSetup.type];
   if(!Q.assign&&(prev==null||pct>prev)){best[lastSetup.type]=pct;store.set('kanji.best',best);}
   var msg=Q.test&&pct<60?'Keep going. Go back to the kanji below, then try another test.':pct>=85?'Excellent work!':pct>=60?'Good effort. A little more practice and you will have it.':'Keep going. Review the kanji below and try again.';
@@ -549,6 +618,63 @@ function testPage(p){
   (key?'':'<div class="sh-meta"><span>Name <i></i></span><span>Class <i></i></span><span>Score <i></i>/ '+len+'</span></div>')+'</div>'+body+'</article>');
 }
 
+/* ---------- reading passages ---------- */
+var LEVELS={1:'Level 1: short and simple',2:'Level 2: a little longer',3:'Level 3: connected sentences'};
+function readById(id){var r=null;window.READINGS.forEach(function(x){if(x.id===id)r=x;});return r;}
+function parseMk(str){
+  var segs=[],re=/\{([^|}]+)\|([^}]+)\}/g,last=0,m;
+  while((m=re.exec(str))){if(m.index>last)segs.push(['T',str.slice(last,m.index)]);segs.push(['R',m[1],m[2]]);last=re.lastIndex;}
+  if(last<str.length)segs.push(['T',str.slice(last)]);return segs;
+}
+function passageKanji(r){var seen={},out=[];r.text.join('').replace(/\{([^|}]+)\|/g,'$1').split('').forEach(function(c){if(BY[c]&&!seen[c]){seen[c]=1;out.push(c);}});return out;}
+function readListPage(){
+  var html='<h1>Reading</h1><p>Short passages that use the prescribed kanji. Tap a kanji word to see how it is read. Then answer the questions to check that you understood.</p>';
+  [1,2,3].forEach(function(l){
+    var list=window.READINGS.filter(function(r){return r.level===l;});if(!list.length)return;
+    html+='<h2>'+LEVELS[l]+'</h2><ul class="tiles">'+list.map(function(r){var best=act.reads[r.id];
+      return '<li class="tile"><a href="#/read/'+r.id+'"><strong lang="ja">'+esc(r.jp)+'</strong>'+esc(r.en)+(best!=null?'<br><span class="muted">✓ Finished: '+best+' of '+r.qs.length+' correct</span>':'')+'</a></li>';}).join('')+'</ul>';
+  });
+  return html;
+}
+function readPage(r){
+  var paras=r.text.map(function(t){return '<p class="rp">'+parseMk(t).map(function(g){
+    return g[0]==='R'?'<button type="button" class="rw" aria-label="'+esc(g[1])+', tap to show the reading" data-b="'+esc(g[1])+'" data-r="'+esc(g[2])+'"><ruby>'+esc(g[1])+'<rp>(</rp><rt>'+esc(g[2])+'</rt><rp>)</rp></ruby></button>':esc(g[1]);}).join('')+'</p>';}).join('');
+  var kana0=r.text.map(function(t){return kana(parseMk(t));}).join('。').replace(/。。/g,'。');
+  var ks=passageKanji(r);
+  return '<p><a href="#/read">← All passages</a></p><h1>'+esc(r.en)+' <span class="muted" lang="ja" style="font-size:.7em">'+esc(r.jp)+'</span></h1><p class="muted">'+LEVELS[r.level]+'</p>'+
+  '<div class="btn-row"><label class="chip"><input type="checkbox" id="allf"><span>Show all furigana</span></label>'+hearBtn(kana0,'the passage')+'</div>'+
+  '<div class="read-text" id="rtext" lang="ja">'+paras+'</div>'+
+  '<details class="tr"><summary>Show the English translation</summary>'+r.tr.map(function(t){return '<p>'+esc(t)+'</p>';}).join('')+'</details>'+
+  '<h2>Questions</h2><form id="rq" novalidate>'+r.qs.map(function(q,i){return '<fieldset class="opts rqf"><legend><strong>'+(i+1)+'.</strong> '+esc(q.q)+'</legend>'+q.o.map(function(o,j){return '<label><input type="radio" name="q'+i+'" value="'+j+'"> <span>'+esc(o)+'</span></label>';}).join('')+'<p class="rfb" id="rfb'+i+'" role="status"></p></fieldset>';}).join('')+
+  '<div class="btn-row"><button class="btn btn-primary" type="submit">Check my answers</button></div><div id="rres" role="status" aria-live="polite" tabindex="-1"></div></form>'+
+  '<h2>Kanji in this passage</h2><ul class="chips-row">'+ks.map(function(k){return '<li><a class="btn btn-secondary" href="#/kanji/'+encodeURIComponent(k)+'" aria-label="'+esc(k)+', '+esc(BY[k].label)+'"><span lang="ja">'+k+'</span></a></li>';}).join('')+'</ul>';
+}
+function readInit(r){
+  var box=$('#rtext');
+  box.addEventListener('click',function(e){
+    var b=e.target.closest('.rw');if(!b)return;var on=b.classList.toggle('on');
+    b.setAttribute('aria-label',on?b.getAttribute('data-b')+', read as '+b.getAttribute('data-r')+', tap to hide':b.getAttribute('data-b')+', tap to show the reading');
+  });
+  $('#allf').addEventListener('change',function(e){box.classList.toggle('all',e.target.checked);});
+  $('#rq').addEventListener('submit',function(e){
+    e.preventDefault();var score=0,answered=0;
+    r.qs.forEach(function(q,i){
+      var c=$('input[name="q'+i+'"]:checked'),fb=$('#rfb'+i);
+      $$('input[name="q'+i+'"]').forEach(function(x){x.parentNode.classList.remove('right','wrong');});
+      if(!c){fb.className='rfb feedback bad';fb.textContent='No answer chosen.';return;}
+      answered++;var ok=+c.value===q.a;if(ok)score++;
+      c.parentNode.classList.add(ok?'right':'wrong');
+      $$('input[name="q'+i+'"]')[q.a].parentNode.classList.add('right');
+      fb.className='rfb feedback '+(ok?'good':'bad');fb.textContent=ok?'✓ Correct.':'✗ Not quite. The answer is: '+q.o[q.a]+'.';
+    });
+    var res=$('#rres');
+    if(answered<r.qs.length){res.className='feedback bad';res.textContent='Answer all '+r.qs.length+' questions to finish. You can re-read the passage first.';res.focus();return;}
+    res.className='feedback '+(score===r.qs.length?'good':'bad');
+    res.textContent='You got '+score+' out of '+r.qs.length+'.'+(score===r.qs.length?' Excellent reading!':' Read the passage again, tap the kanji you were unsure about, then try once more.');
+    if(act.reads[r.id]==null||score>act.reads[r.id])act.reads[r.id]=score;markActive();saveAct();checkBadges();res.focus();
+  });
+}
+
 /* ---------- flashcards ---------- */
 var cardSetup={deck:'kanji',set:'active'},C=null;
 function cardsPage(msg){
@@ -591,7 +717,7 @@ function showCard(){
     b.innerHTML='<span class="fb-main">'+c.b+'</span><span class="fb-sub">'+c.sub+'</span>'+(c.say?'<span class="hear-row">'+hearBtn(c.say,c.fl)+'</span>':'');
     this.hidden=true;$('#cgot').hidden=false;$('#cagn').hidden=false;$('#cgot').focus();
   });
-  $('#cgot').addEventListener('click',function(){C.q.shift();C.done++;showCard();});
+  $('#cgot').addEventListener('click',function(){markActive();C.q.shift();C.done++;showCard();});
   $('#cagn').addEventListener('click',function(){C.q.shift();C.again++;C.q.splice(Math.min(3,C.q.length),0,c);showCard();});
 }
 
@@ -739,7 +865,7 @@ function aboutPage(){
   '<h2>Use it like an app</h2><p>You can add this website to your phone or tablet so it opens like an app. After you have opened it once with internet, the kanji pages, quizzes and flashcards also work with no signal. Slides and PDFs work offline only after you have opened them once.</p>'+
   '<ul><li><strong>iPhone or iPad (Safari):</strong> tap the Share button, then <strong>Add to Home Screen</strong>.</li><li><strong>Android (Chrome):</strong> tap the menu (three dots), then <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li><li><strong>Computer (Chrome or Edge):</strong> choose the install icon at the right of the address bar.</li></ul>'+
   '<p id="install-wrap" hidden><button type="button" class="btn btn-primary" id="install-btn">Install this app</button></p>'+
-  '<h2>Privacy</h2><p>This site does not collect or send any information. Your settings, the kanji you mark as learned and your best quiz scores are saved only in your own browser on this device.</p>'+
+  '<h2>Privacy</h2><p>This site does not collect or send any information. Your settings, the kanji you mark as learned and your best quiz scores, your streak and your badges are saved only in your own browser on this device.</p>'+
   '<h2>Something not working for you?</h2><p>Tell your Japanese teacher what is hard to use and what would help, and the site can be improved.</p>';
 }
 route();

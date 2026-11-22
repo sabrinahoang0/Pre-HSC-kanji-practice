@@ -1,0 +1,27 @@
+/* Short graded reading passages. Markup: {kanji|reading}. Only prescribed kanji are used; everything else is in kana. */
+window.READINGS=[
+{id:'family',level:1,jp:'わたしのかぞく',en:'My family',
+ text:['{私|わたし}の{名前|なまえ}はあきです。{私|わたし}の{家族|かぞく}は{五人|ごにん}です。','{父|ちち}と{母|はは}と{兄|あに}と{妹|いもうと}がいます。','{父|ちち}は{先生|せんせい}です。{母|はは}は{会社員|かいしゃいん}です。','{兄|あに}は{十八才|じゅうはっさい}です。{妹|いもうと}は{十才|じゅっさい}です。'],
+ tr:['My name is Aki. There are five people in my family.','I have a father, a mother, an older brother and a younger sister.','My father is a teacher. My mother is an office worker.','My older brother is 18 years old. My younger sister is 10 years old.'],
+ qs:[{q:'How many people are in Aki’s family?',o:['Three','Four','Five'],a:2},{q:'What is Aki’s father’s job?',o:['Teacher','Office worker','Student'],a:0},{q:'What is Aki’s mother’s job?',o:['Teacher','Office worker','Doctor'],a:1},{q:'How old is Aki’s younger sister?',o:['8','10','18'],a:1}]},
+{id:'day',level:1,jp:'わたしのいちにち',en:'My day',
+ text:['{私|わたし}は{毎朝|まいあさ}{七時|しちじ}におきます。','{朝|あさ}ごはんを{食|た}べます。{八時|はちじ}に{電車|でんしゃ}で{学校|がっこう}へ{行|い}きます。','{午後|ごご}{三時|さんじ}に{家|いえ}に{帰|かえ}ります。{夜|よる}は{本|ほん}を{読|よ}みます。'],
+ tr:['Every morning I get up at seven o’clock.','I eat breakfast. At eight o’clock I go to school by train.','I go home at three in the afternoon. At night I read a book.'],
+ qs:[{q:'What time does the writer get up?',o:['6:00','7:00','8:00'],a:1},{q:'How does the writer go to school?',o:['By train','By bus','On foot'],a:0},{q:'What time does the writer go home?',o:['3:00 pm','8:00 am','3:00 am'],a:0},{q:'What does the writer do at night?',o:['Watches TV','Reads a book','Goes to school'],a:1}]},
+{id:'shopping',level:2,jp:'どようびのかいもの',en:'Saturday shopping',
+ text:['{土曜日|どようび}に、{友達|ともだち}と{町|まち}へ{行|い}きました。','{駅|えき}の{前|まえ}に{大|おお}きい{店|みせ}があります。','{私|わたし}は{新|あたら}しい{本|ほん}を{買|か}いました。{本|ほん}は{八百円|はっぴゃくえん}でした。','{友達|ともだち}は{赤|あか}いくつを{見|み}ましたが、{高|たか}かったので、{買|か}いませんでした。','その{後|あと}、{二人|ふたり}でラーメンを{食|た}べました。{安|やす}くて、おいしかったです。'],
+ tr:['On Saturday I went to town with my friend.','There is a big shop in front of the station.','I bought a new book. The book was 800 yen.','My friend looked at some red shoes, but they were expensive, so (she) did not buy them.','After that, the two of us ate ramen. It was cheap and delicious.'],
+ qs:[{q:'Where did they go on Saturday?',o:['To town','To school','To the sea'],a:0},{q:'What did the writer buy?',o:['Red shoes','A new book','Ramen'],a:1},{q:'Why did the friend not buy the shoes?',o:['They were too small','They were expensive','The shop was closed'],a:1},{q:'What did they eat?',o:['Rice','Ramen','Bread'],a:1}]},
+{id:'seasons',level:2,jp:'にほんのきせつ',en:'The seasons of Japan',
+ text:['{日本|にほん}には{四|よっ}つのきせつがあります。','{春|はる}は{花|はな}がきれいです。{夏|なつ}はあついので、{海|うみ}へ{行|い}きます。','{秋|あき}は{山|やま}が{赤|あか}くなります。{冬|ふゆ}は{雪|ゆき}がふります。','{私|わたし}は{冬|ふゆ}が{好|す}きです。{友達|ともだち}は{夏|なつ}が{好|す}きです。'],
+ tr:['Japan has four seasons.','In spring the flowers are beautiful. In summer it is hot, so people go to the sea.','In autumn the mountains turn red. In winter it snows.','I like winter. My friend likes summer.'],
+ qs:[{q:'How many seasons does Japan have?',o:['Two','Three','Four'],a:2},{q:'What is beautiful in spring?',o:['The flowers','The snow','The sea'],a:0},{q:'Why do people go to the sea in summer?',o:['It is hot','It is cold','It is raining'],a:0},{q:'Which season does the friend like?',o:['Winter','Summer','Autumn'],a:1}]},
+{id:'study',level:3,jp:'にほんごのべんきょう',en:'Studying Japanese',
+ text:['{私|わたし}は{学校|がっこう}で{日本語|にほんご}を{勉強|べんきょう}しています。','{毎週|まいしゅう}{月曜日|げつようび}と{木曜日|もくようび}に{日本語|にほんご}のじゅぎょうがあります。{先生|せんせい}は{漢字|かんじ}を{教|おし}えてくれます。','{私|わたし}は{漢字|かんじ}を{読|よ}むのが{好|す}きですが、{書|か}くのはむずかしいです。{毎日|まいにち}{十分|じゅっぷん}ぐらい{書|か}くれんしゅうをします。','{来年|らいねん}は{日本|にほん}へ{行|い}きたいです。{日本|にほん}で{友達|ともだち}と{話|はな}したいです。'],
+ tr:['I study Japanese at school.','We have Japanese class every week on Monday and Thursday. The teacher teaches us kanji.','I like reading kanji, but writing is difficult. Every day I practise writing for about ten minutes.','Next year I want to go to Japan. In Japan I want to talk with friends.'],
+ qs:[{q:'On which days is there a Japanese class?',o:['Monday and Thursday','Tuesday and Friday','Every day'],a:0},{q:'What does the writer find difficult?',o:['Reading kanji','Writing kanji','Talking to the teacher'],a:1},{q:'How long does the writer practise writing each day?',o:['About 10 minutes','About an hour','About 3 minutes'],a:0},{q:'What does the writer want to do next year?',o:['Study at home','Go to Japan','Teach kanji'],a:1}]},
+{id:'town',level:3,jp:'わたしのまち',en:'My town',
+ text:['{私|わたし}の{町|まち}は{東京|とうきょう}の{西|にし}にあります。','{駅|えき}の{近|ちか}くに{公園|こうえん}があります。{公園|こうえん}の{中|なか}に{大|おお}きい{木|き}があります。','{毎朝|まいあさ}、{父|ちち}といぬと{公園|こうえん}を{歩|ある}きます。','{夕方|ゆうがた}は{友達|ともだち}と{会|あ}って、{話|はな}します。{私|わたし}はこの{町|まち}が{大好|だいす}きです。'],
+ tr:['My town is in the west of Tokyo.','There is a park near the station. In the park there is a big tree.','Every morning I walk in the park with my father and the dog.','In the evening I meet and talk with my friends. I love this town.'],
+ qs:[{q:'Where is the writer’s town?',o:['East of Tokyo','West of Tokyo','South of Osaka'],a:1},{q:'What is in the park?',o:['A big tree','A school','A shop'],a:0},{q:'Who does the writer walk with in the morning?',o:['Friends','Mother and sister','Father and the dog'],a:2},{q:'When does the writer meet friends?',o:['In the morning','In the evening','At night'],a:1}]}
+];
