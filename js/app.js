@@ -361,7 +361,7 @@ function sheetPage(d){
 }
 
 /* ---------- practice ---------- */
-var TYPES={read:'Read it: choose the reading of a word',meaning:'Match it: choose the English meaning of a word',gap:'Write it: choose the missing kanji in a sentence',kanji:'Kanji meaning: choose the meaning of a kanji',ext:'Extension words: read or match harder words from the Stage 6 list',listen:'Listening: hear a word, then choose the kanji or the meaning',mix:'Mixed: a bit of everything',test:'Test prep: 20 mixed questions, answers shown at the end'};
+var TYPES={read:'Read it: choose the reading of a word',meaning:'Match it: choose the English meaning of a word',gap:'Write it: choose the missing kanji in a sentence',kanji:'Kanji meaning: choose the meaning of a kanji',listen:'Listening: hear a word, then choose the kanji or the meaning',ext:'Extension words: read or match harder words from the Stage 6 list',mix:'Mixed: a bit of everything',test:'Test prep: 20 mixed questions, answers shown at the end'};
 var lastSetup={type:'read',set:'active',n:10};
 var ALLX=[];K.forEach(function(d){(d.ext||[]).forEach(function(w){ALLX.push({w:w.w,r:kana(w.ruby),e:w.e,k:d.k});});});
 var ALLW=[];K.forEach(function(d){d.words.forEach(function(w){ALLW.push({w:w.w,r:w.r,e:w.e,k:d.k});});});
