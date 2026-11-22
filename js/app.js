@@ -619,7 +619,7 @@ function testPage(p){
 }
 
 /* ---------- reading passages ---------- */
-var LEVELS={1:'Level 1: short and simple',2:'Level 2: a little longer',3:'Level 3: connected sentences'};
+var LEVELS={1:'Level 1: short and simple',2:'Level 2: a little longer',3:'Level 3: connected sentences',4:'Level 4: longer passages (reasons, invitations, plans)',5:'Level 5: challenge (permission, advice, plain form)'};
 function readById(id){var r=null;window.READINGS.forEach(function(x){if(x.id===id)r=x;});return r;}
 function parseMk(str){
   var segs=[],re=/\{([^|}]+)\|([^}]+)\}/g,last=0,m;
@@ -629,7 +629,7 @@ function parseMk(str){
 function passageKanji(r){var seen={},out=[];r.text.join('').replace(/\{([^|}]+)\|/g,'$1').split('').forEach(function(c){if(BY[c]&&!seen[c]){seen[c]=1;out.push(c);}});return out;}
 function readListPage(){
   var html='<h1>Reading</h1><p>Short passages that use the prescribed kanji. Tap a kanji word to see how it is read. Then answer the questions to check that you understood.</p>';
-  [1,2,3].forEach(function(l){
+  [1,2,3,4,5].forEach(function(l){
     var list=window.READINGS.filter(function(r){return r.level===l;});if(!list.length)return;
     html+='<h2>'+LEVELS[l]+'</h2><ul class="tiles">'+list.map(function(r){var best=act.reads[r.id];
       return '<li class="tile"><a href="#/read/'+r.id+'"><strong lang="ja">'+esc(r.jp)+'</strong>'+esc(r.en)+(best!=null?'<br><span class="muted">✓ Finished: '+best+' of '+r.qs.length+' correct</span>':'')+'</a></li>';}).join('')+'</ul>';
@@ -639,7 +639,7 @@ function readListPage(){
 function readPage(r){
   function seg2(g){return g[0]==='R'?'<button type="button" class="rw" aria-label="'+esc(g[1])+', tap to show the reading" data-b="'+esc(g[1])+'" data-r="'+esc(g[2])+'"><ruby>'+esc(g[1])+'<rp>(</rp><rt>'+esc(g[2])+'</rt><rp>)</rp></ruby></button>':esc(g[1]);}
   function units(segs){var out=[],cur=null;segs.forEach(function(g){if(g[0]==='R'||!cur){cur=[];out.push(cur);}cur.push(g);});return out;}
-  var paras=r.text.map(function(t){return '<p class="rp">'+(t.match(/[^。]+。?/g)||[t]).map(function(sn){return '<span class="sn">'+(sn.match(/[^、]+、?/g)||[sn]).map(function(ph){return units(parseMk(ph)).map(function(u){return '<span class="u">'+u.map(seg2).join('')+'</span>';}).join('');}).join('')+'</span>';}).join('')+'</p>';}).join('');
+  var paras=r.text.map(function(t){return '<p class="rp">'+(t.match(/[^。]+。?」?/g)||[t]).map(function(sn){return '<span class="sn">'+(sn.match(/[^、]+、?/g)||[sn]).map(function(ph){return units(parseMk(ph)).map(function(u){return '<span class="u'+(u.reduce(function(n,g){return n+g[1].length;},0)>8?' l':'')+'">'+u.map(seg2).join('')+'</span>';}).join('');}).join('')+'</span>';}).join('')+'</p>';}).join('');
   var kana0=r.text.map(function(t){return kana(parseMk(t));}).join('。').replace(/。。/g,'。');
   var ks=passageKanji(r);
   return '<p><a href="#/read">← All passages</a></p><h1>'+esc(r.en)+' <span class="muted" lang="ja" style="font-size:.7em">'+esc(r.jp)+'</span></h1><p class="muted">'+LEVELS[r.level]+'</p>'+
